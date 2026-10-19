@@ -73,7 +73,7 @@ return rec()?a:null;}
 var sol=null;try{sol=solve(g.slice());}catch(e){}
 function wrong(i){var v=g[i];if(!v||fix[i])return false;return sol?v!==sol[i]:conf(i);}
 function lsDraw(){lsE.textContent='⚠️ '+miss+'/'+MAXM;lsE.className=miss?'w':'';}
-function lose(){if(over)return;over=true;show('❌ أخطأت '+MAXM+' مرات<br>وخرجت من اللعبة','✖');try{tg&&tg.disableClosingConfirmation();}catch(e){}}
+function lose(){if(over)return;over=true;show('❌ أخطأت '+MAXM+' مرات<br>وخرجت من اللعبة','✖');try{tg&&tg.disableClosingConfirmation();}catch(e){}var d0='sd0.'+seed;setTimeout(function(){try{if(!demo&&tg&&tg.sendData)tg.sendData(d0);}catch(e){}},1800);}
 function put(n){if(sel<0||fix[sel])return;
 if(n===0){g[sel]=0;notes[sel]={};}
 else if(pen&&!g[sel]){if(notes[sel][n])delete notes[sel][n];else notes[sel][n]=1;}
