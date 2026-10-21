@@ -331,7 +331,52 @@ bt.addEventListener('click',function(){
  finish('BINGO!','جاري إرسال فوزك…');
  setTimeout(function(){try{tg.sendData(JSON.stringify({t:'bingo',s:cseed,g:gseed,n:called.length,m:m}));}catch(e){toast('تعذّر الإرسال');ended=false;fin.classList.remove('show');}},450);
 });
-/* ===== قناة إنهاء الجولة (ntfy) ===== */
+/* ===== مشترك MQTT خفيف (WebSocket): البديل الأساسي لـ ntfy لما يرفض الاستضافة (429) ===== */
+function rayMqtt(filters,onMsg,urls){
+ urls=urls||['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+ var PFX='rayrelay/';
+ filters=filters.map(function(f){return PFX+f;});
+ urls.forEach(function(u){connect(u);});
+ function connect(url){
+  var ws=null,buf=new Uint8Array(0),ping=0,retry=0,sched=false;
+  function cat(a,b){var c=new Uint8Array(a.length+b.length);c.set(a,0);c.set(b,a.length);return c;}
+  function rl(n){var o=[];do{var d=n%128;n=Math.floor(n/128);if(n)d|=128;o.push(d);}while(n);return o;}
+  function str(s){var e=new TextEncoder().encode(s),a=[e.length>>8,e.length&255];for(var i=0;i<e.length;i++)a.push(e[i]);return a;}
+  function send(a){try{ws.send(new Uint8Array(a));}catch(e){}}
+  function later(){if(sched)return;sched=true;setTimeout(function(){sched=false;open();},Math.min(20000,1500*(++retry)));}
+  function open(){
+   try{ws=new WebSocket(url,'mqtt');}catch(e){later();return;}
+   ws.binaryType='arraybuffer';buf=new Uint8Array(0);
+   ws.onopen=function(){var vh=[0,4,77,81,84,84,4,2,0,30],pl=str('rb'+Math.random().toString(36).slice(2,10));send([0x10].concat(rl(vh.length+pl.length),vh,pl));};
+   ws.onmessage=function(ev){buf=cat(buf,new Uint8Array(ev.data));parse();};
+   ws.onclose=function(){clearInterval(ping);later();};
+   ws.onerror=function(){try{ws.close();}catch(e){}};
+  }
+  function parse(){
+   while(buf.length>=2){
+    var i=1,mul=1,len=0,b;
+    do{if(i>=buf.length)return;b=buf[i++];len+=(b&127)*mul;mul*=128;}while(b&128);
+    if(buf.length<i+len)return;
+    var hdr=buf[0],body=buf.slice(i,i+len);buf=buf.slice(i+len);
+    var t=hdr>>4;
+    if(t===2){ /* CONNACK → اشتراك */
+     if(body[1]!==0){try{ws.close();}catch(e){}return;}
+     var sub=[0,1],k;for(k=0;k<filters.length;k++)sub=sub.concat(str(filters[k]),[0]);
+     send([0x82].concat(rl(sub.length),sub));
+     clearInterval(ping);ping=setInterval(function(){send([0xC0,0]);},20000);retry=0;
+    }else if(t===3){ /* PUBLISH */
+     var qos=(hdr>>1)&3,tl=(body[0]<<8)|body[1],off=2+tl;
+     var topic=new TextDecoder().decode(body.slice(2,off));
+     if(qos)off+=2;
+     try{onMsg(topic.slice(PFX.length),new TextDecoder().decode(body.slice(off)));}catch(e){}
+    }
+   }
+  }
+  open();
+ }
+}
+
+/* ===== قناة إنهاء الجولة (ntfy + MQTT) ===== */
 (function(){
  if(!RELAY||demo)return;
  var es=null,pt=null;
@@ -343,6 +388,7 @@ bt.addEventListener('click',function(){
   try{fetch('https://ntfy.sh/'+RELAY+'/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
    String(t).split('\n').forEach(function(l){if(!l)return;try{var d=JSON.parse(l);if(d.event==='message'&&isEnd(d.message))stop();}catch(e){}});}).catch(function(){});}catch(e){}}
  pt=setInterval(poll,2000);poll();
+ rayMqtt([RELAY],function(t,p){if(isEnd(p))stop();});
  document.addEventListener('visibilitychange',function(){if(!document.hidden)poll();});
 })();
 /* ===== محادثة اللاعبين (ntfy) =====
@@ -439,6 +485,7 @@ bt.addEventListener('click',function(){
    try{fetch('https://ntfy.sh/'+RELAY+'p/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
     String(t).split('\n').forEach(function(l){if(l)eatAv(l);});}).catch(function(){});}catch(e){}}
   setInterval(pollAv,8000);
+  rayMqtt([RELAY+'/p/#'],function(t,p){eatAv(JSON.stringify({message:p}));});
   /* الكيبورد: نرفع الشريط فوقه (iOS يصغّر النافذة المرئية فقط) */
   var vv=window.visualViewport;
   function kb(){if(!vv)return;var off=Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop));H.style.setProperty('--kb',off+'px');if(isOpen)toEnd();}
