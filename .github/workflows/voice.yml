@@ -1,0 +1,25 @@
+name: Generate bingo voice
+on:
+  workflow_dispatch:
+    inputs:
+      voice:
+        description: "Voice name"
+        default: "en-US-ChristopherNeural"
+permissions:
+  contents: write
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install edge-tts
+      - run: python generate_bingo_voice.py "${{ github.event.inputs.voice }}"
+      - run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add bingo_voice
+          git commit -m "bingo voice" || echo "nothing to commit"
+          git push
