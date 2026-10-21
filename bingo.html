@@ -332,8 +332,19 @@ bt.addEventListener('click',function(){
  setTimeout(function(){try{tg.sendData(JSON.stringify({t:'bingo',s:cseed,g:gseed,n:called.length,m:m}));}catch(e){toast('تعذّر الإرسال');ended=false;fin.classList.remove('show');}},450);
 });
 /* ===== قناة إنهاء الجولة (ntfy) ===== */
-if(RELAY&&!demo&&window.EventSource){try{var es=new EventSource('https://ntfy.sh/'+RELAY+'/sse');
- es.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(d.message&&/end|win/i.test(d.message)&&!ended){ended=true;finish('انتهت الجولة','فاز لاعب آخر');es.close();}}catch(e){}};}catch(e){}}
+(function(){
+ if(!RELAY||demo)return;
+ var es=null,pt=null;
+ function stop(){if(ended)return;ended=true;try{es&&es.close();}catch(e){}clearInterval(pt);finish('انتهت الجولة','فاز لاعب آخر');}
+ function isEnd(m){return !!m&&/end|win/i.test(m);}
+ if(window.EventSource){try{es=new EventSource('https://ntfy.sh/'+RELAY+'/sse?since=all');
+  es.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(isEnd(d.message))stop();}catch(e){}};}catch(e){}}
+ function poll(){if(ended)return;
+  try{fetch('https://ntfy.sh/'+RELAY+'/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+   String(t).split('\n').forEach(function(l){if(!l)return;try{var d=JSON.parse(l);if(d.event==='message'&&isEnd(d.message))stop();}catch(e){}});}).catch(function(){});}catch(e){}}
+ pt=setInterval(poll,2000);poll();
+ document.addEventListener('visibilitychange',function(){if(!document.hidden)poll();});
+})();
 /* ===== محادثة اللاعبين (ntfy) =====
    الكل يشوف الرسائل. الكتابة: المشرفين دائماً (a=1)، والأعضاء فقط لو البوت فعّلها (c=1).
    الأيقونة الخضراء يسار الخانة تقفل الرسائل عند اللاعب نفسه (تصير حمراء) وترجع تفتحها. */
