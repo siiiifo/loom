@@ -354,7 +354,9 @@ bt.addEventListener('click',function(){
   var H=document.documentElement,CT=RELAY+'c';
   var NAME=String(q.get('n')||'لاعب').replace(/[\u0000-\u001f]/g,'').trim().slice(0,20)||'لاعب';
   var CAN=q.get('c')==='1',ADM=q.get('a')==='1',UID=String(q.get('u')||'').replace(/[^0-9]/g,'').slice(0,20);
-  var AV={};/* صور المشاركين: uid -> data:image (يرسلها البوت عبر قناة ntfy، ولو ما فيه صورة يظهر الحرف الأول) */
+  var AVK='rb_av_'+RELAY,AV={};try{AV=JSON.parse(localStorage.getItem(AVK)||'{}')||{};}catch(e){AV={};}
+  function saveAv(){try{localStorage.setItem(AVK,JSON.stringify(AV));}catch(e){}}
+  /* صور المشاركين: uid -> data:image (يرسلها البوت عبر قناة ntfy، ولو ما فيه صورة يظهر الحرف الأول) */
   function setAv(el,u){var d=AV[u];if(!d)return;el.style.backgroundImage='url("'+d+'")';el.classList.add('hp');}
   var me=Math.random().toString(36).slice(2,9),seen={},lastSend=0,isOpen=false,stripT=0,errT=0,OFF=false;
   try{OFF=localStorage.getItem('rb_chatoff')==='1';}catch(e){}
@@ -426,10 +428,17 @@ bt.addEventListener('click',function(){
     var o=JSON.parse(d.message);if(!o||typeof o.m!=='string'||!o.i||seen[o.i])return;seen[o.i]=1;
     addMsg({i:o.i,n:String(o.n||'لاعب').slice(0,20),m:o.m.slice(0,100),a:o.a?1:0,u:String(o.u||'').replace(/[^0-9]/g,'').slice(0,20)});}catch(e){}};}catch(e){}
   /* قناة الصور: البوت ينشر مصغّرات صور اللاعبين، وتتحدّث الرسائل الظاهرة فور وصولها */
-  try{var ea=new EventSource('https://ntfy.sh/'+RELAY+'p/sse?since=all');
-   ea.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(!d||!d.message)return;var o=JSON.parse(d.message);if(!o||!Array.isArray(o.v))return;
-    o.v.forEach(function(x){if(!x||x.length<2)return;var u=String(x[0]).replace(/[^0-9]/g,''),b=String(x[1]);if(!u||!/^[A-Za-z0-9+\/=]+$/.test(b)||b.length>6000)return;AV[u]='data:image/jpeg;base64,'+b;});
-    var els=document.querySelectorAll('.av[data-u]');for(var k=0;k<els.length;k++)setAv(els[k],els[k].getAttribute('data-u'));}catch(e){}};}catch(e){}
+  function eatAv(txt){var got=false;try{var d=JSON.parse(txt);if(!d||!d.message)return;var o=JSON.parse(d.message);if(!o||!Array.isArray(o.v))return;
+   o.v.forEach(function(x){if(!x||x.length<2)return;var u=String(x[0]).replace(/[^0-9]/g,''),b=String(x[1]);if(!u||!/^[A-Za-z0-9+\/=]+$/.test(b)||b.length>6000)return;var v='data:image/jpeg;base64,'+b;if(AV[u]!==v){AV[u]=v;got=true;}});}catch(e){}
+   if(got){saveAv();paintAv();}}
+  function paintAv(){var els=document.querySelectorAll('.av[data-u]');for(var k=0;k<els.length;k++)setAv(els[k],els[k].getAttribute('data-u'));}
+  try{var ea=new EventSource('https://ntfy.sh/'+RELAY+'p/sse?since=all');ea.onmessage=function(ev){eatAv(ev.data);};}catch(e){}
+  /* احتياط: لو فاتتك رسالة صور (انقطاع/تأخر)، نسأل القناة كل 8 ثواني طالما فيه رسالة بدون صورة */
+  function pollAv(){if(document.hidden)return;
+   var miss=document.querySelectorAll('.av[data-u]:not(.hp)');if(!miss.length)return;
+   try{fetch('https://ntfy.sh/'+RELAY+'p/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+    String(t).split('\n').forEach(function(l){if(l)eatAv(l);});}).catch(function(){});}catch(e){}}
+  setInterval(pollAv,8000);
   /* الكيبورد: نرفع الشريط فوقه (iOS يصغّر النافذة المرئية فقط) */
   var vv=window.visualViewport;
   function kb(){if(!vv)return;var off=Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop));H.style.setProperty('--kb',off+'px');if(isOpen)toEnd();}
