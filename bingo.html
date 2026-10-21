@@ -98,7 +98,7 @@ html.co #cstrip{display:none}
 /* الرسالة: صورة دائرية + اسم أبيض فوق الفقاعة */
 .mr{display:flex;align-items:flex-start;gap:9px;max-width:92%}
 .av{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 18px/1 Cairo,system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);box-shadow:0 0 0 1.5px rgba(255,255,255,.18)}
-.av.ph{background-size:cover;background-position:center;background-repeat:no-repeat;color:transparent;text-shadow:none}
+.av.hp{background-size:cover;background-position:center;background-repeat:no-repeat;color:transparent;text-shadow:none}
 .mc{min-width:0}
 .mn{font-size:14px;font-weight:800;color:#fff;margin:1px 4px 4px;direction:ltr;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
 .mb{background:rgba(34,34,36,.96);color:#f4f4f6;border-radius:18px;padding:9px 18px;font-size:15px;line-height:1.55;unicode-bidi:plaintext;text-align:center;word-break:break-word;overflow-wrap:anywhere}
@@ -315,7 +315,7 @@ if(RELAY&&!demo&&window.EventSource){try{var es=new EventSource('https://ntfy.sh
   var NAME=String(q.get('n')||'لاعب').replace(/[\u0000-\u001f]/g,'').trim().slice(0,20)||'لاعب';
   var CAN=q.get('c')==='1',ADM=q.get('a')==='1',UID=String(q.get('u')||'').replace(/[^0-9]/g,'').slice(0,20);
   var AV={};/* صور المشاركين: uid -> data:image (يرسلها البوت عبر قناة ntfy، ولو ما فيه صورة يظهر الحرف الأول) */
-  function setAv(el,u){var d=AV[u];if(!d)return;el.style.backgroundImage='url("'+d+'")';el.classList.add('ph');}
+  function setAv(el,u){var d=AV[u];if(!d)return;el.style.backgroundImage='url("'+d+'")';el.classList.add('hp');}
   var me=Math.random().toString(36).slice(2,9),seen={},lastSend=0,isOpen=false,stripT=0,errT=0,OFF=false;
   try{OFF=localStorage.getItem('rb_chatoff')==='1';}catch(e){}
   H.classList.add('hc');
