@@ -98,16 +98,17 @@ html.co #cstrip{display:none}
 /* الرسالة: صورة دائرية + اسم أبيض فوق الفقاعة */
 .mr{display:flex;align-items:flex-start;gap:9px;max-width:92%}
 .av{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 18px/1 Cairo,system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);box-shadow:0 0 0 1.5px rgba(255,255,255,.18)}
+.av.ph{background-size:cover;background-position:center;background-repeat:no-repeat;color:transparent;text-shadow:none}
 .mc{min-width:0}
 .mn{font-size:14px;font-weight:800;color:#fff;margin:1px 4px 4px;direction:ltr;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
 .mb{background:rgba(34,34,36,.96);color:#f4f4f6;border-radius:18px;padding:9px 18px;font-size:15px;line-height:1.55;unicode-bidi:plaintext;text-align:center;word-break:break-word;overflow-wrap:anywhere}
 .mb.em{background:none;border:0!important;font-size:36px;line-height:1.15;padding:0 2px;box-shadow:none!important;text-shadow:none!important}
-/* رسائل المشرفين: إطار نيون ملوّن مثل اللعبة المرجعية */
+/* رسائل المشرفين: إطار ذهبي */
 .mr.adm .av{box-shadow:0 0 0 2px #ffd24a,0 0 10px rgba(255,210,74,.55)}
-.mr.adm .mb:not(.em){position:relative;color:#ff35c6;font-weight:800;text-shadow:0 0 7px rgba(255,53,198,.55);border:3px solid transparent;border-radius:30px;padding:9px 24px 10px;
- background:linear-gradient(#08020e,#08020e) padding-box,linear-gradient(90deg,#00d2ff,#35ff7a,#ffe600,#ff2fd6,#7a3bff,#00d2ff) border-box;
- box-shadow:0 0 12px rgba(255,47,214,.45),0 0 22px rgba(0,210,255,.25)}
-.mr.adm .mb:not(.em)::before,.mr.adm .mb:not(.em)::after{content:'';position:absolute;top:50%;width:7px;height:56%;transform:translateY(-50%);border-radius:3px;background:linear-gradient(#00d2ff,#35ff7a,#ffe600,#ff2fd6);opacity:.9}
+.mr.adm .mb:not(.em){position:relative;color:#f4f4f6;border:3px solid transparent;border-radius:30px;padding:9px 24px 10px;
+ background:linear-gradient(#08020e,#08020e) padding-box,linear-gradient(90deg,#b8860b,#ffd24a,#fff1a8,#ffd24a,#b8860b) border-box;
+ box-shadow:0 0 12px rgba(255,210,74,.5),0 0 22px rgba(217,162,27,.3)}
+.mr.adm .mb:not(.em)::before,.mr.adm .mb:not(.em)::after{content:'';position:absolute;top:50%;width:7px;height:56%;transform:translateY(-50%);border-radius:3px;background:linear-gradient(#d9a21b,#ffe98a,#d9a21b);opacity:.95}
 .mr.adm .mb:not(.em)::before{left:5px}
 .mr.adm .mb:not(.em)::after{right:5px}
 
@@ -312,7 +313,9 @@ if(RELAY&&!demo&&window.EventSource){try{var es=new EventSource('https://ntfy.sh
   var $=function(i){return document.getElementById(i);};
   var H=document.documentElement,CT=RELAY+'c';
   var NAME=String(q.get('n')||'لاعب').replace(/[\u0000-\u001f]/g,'').trim().slice(0,20)||'لاعب';
-  var CAN=q.get('c')==='1',ADM=q.get('a')==='1';
+  var CAN=q.get('c')==='1',ADM=q.get('a')==='1',UID=String(q.get('u')||'').replace(/[^0-9]/g,'').slice(0,20);
+  var AV={};/* صور المشاركين: uid -> data:image (يرسلها البوت عبر قناة ntfy، ولو ما فيه صورة يظهر الحرف الأول) */
+  function setAv(el,u){var d=AV[u];if(!d)return;el.style.backgroundImage='url("'+d+'")';el.classList.add('ph');}
   var me=Math.random().toString(36).slice(2,9),seen={},lastSend=0,isOpen=false,stripT=0,errT=0,OFF=false;
   try{OFF=localStorage.getItem('rb_chatoff')==='1';}catch(e){}
   H.classList.add('hc');
@@ -327,6 +330,7 @@ if(RELAY&&!demo&&window.EventSource){try{var es=new EventSource('https://ntfy.sh
    var r=document.createElement('div');r.className='mr'+(m.a?' adm':'');
    var av=document.createElement('div');av.className='av';av.style.background='hsl('+hue(m.n)+',55%,42%)';
    av.textContent=Array.from(m.n)[0]||'؟';
+   if(m.u){av.setAttribute('data-u',m.u);setAv(av,m.u);}
    var c=document.createElement('div');c.className='mc';
    var n=document.createElement('div');n.className='mn';n.textContent=(m.a?'👑 ':'')+m.n;
    var b=document.createElement('div');b.className='mb'+(isEmo(m.m)?' em':'');b.textContent=m.m;
@@ -371,7 +375,7 @@ if(RELAY&&!demo&&window.EventSource){try{var es=new EventSource('https://ntfy.sh
    t=String(t||'').replace(/\s+/g,' ').trim().slice(0,100);if(!t)return;
    var now=Date.now();if(now-lastSend<1500){toast('انتظر ثانية');return;}
    lastSend=now;var id=me+now.toString(36);seen[id]=1;
-   var m={i:id,n:NAME,m:t,a:ADM?1:0};
+   var m={i:id,n:NAME,m:t,a:ADM?1:0,u:UID};
    addMsg(m,true);if(fromInput){inp.value='';snd.classList.remove('on');}
    hap('light');
    try{fetch('https://ntfy.sh/'+CT,{method:'POST',body:JSON.stringify(m)}).catch(function(){if(Date.now()-errT>8000){errT=Date.now();toast('تعذّر إرسال الرسالة');}});}catch(e){}
@@ -380,7 +384,12 @@ if(RELAY&&!demo&&window.EventSource){try{var es=new EventSource('https://ntfy.sh
    es.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(!d||!d.message)return;
     if(d.time&&d.time<Date.now()/1000-60)return;
     var o=JSON.parse(d.message);if(!o||typeof o.m!=='string'||!o.i||seen[o.i])return;seen[o.i]=1;
-    addMsg({i:o.i,n:String(o.n||'لاعب').slice(0,20),m:o.m.slice(0,100),a:o.a?1:0});}catch(e){}};}catch(e){}
+    addMsg({i:o.i,n:String(o.n||'لاعب').slice(0,20),m:o.m.slice(0,100),a:o.a?1:0,u:String(o.u||'').replace(/[^0-9]/g,'').slice(0,20)});}catch(e){}};}catch(e){}
+  /* قناة الصور: البوت ينشر مصغّرات صور اللاعبين، وتتحدّث الرسائل الظاهرة فور وصولها */
+  try{var ea=new EventSource('https://ntfy.sh/'+RELAY+'p/sse?since=all');
+   ea.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(!d||!d.message)return;var o=JSON.parse(d.message);if(!o||!Array.isArray(o.v))return;
+    o.v.forEach(function(x){if(!x||x.length<2)return;var u=String(x[0]).replace(/[^0-9]/g,''),b=String(x[1]);if(!u||!/^[A-Za-z0-9+\/=]+$/.test(b)||b.length>6000)return;AV[u]='data:image/jpeg;base64,'+b;});
+    var els=document.querySelectorAll('.av[data-u]');for(var k=0;k<els.length;k++)setAv(els[k],els[k].getAttribute('data-u'));}catch(e){}};}catch(e){}
   /* الكيبورد: نرفع الشريط فوقه (iOS يصغّر النافذة المرئية فقط) */
   var vv=window.visualViewport;
   function kb(){if(!vv)return;var off=Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop));H.style.setProperty('--kb',off+'px');if(isOpen)toEnd();}
