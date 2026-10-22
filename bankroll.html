@@ -180,11 +180,23 @@ body{background:radial-gradient(120% 40% at 50% 0,#0d2a5c 0,#07142b 55%,#050d1e 
 .cbt{display:flex;gap:10px;padding:14px}
 .cbt button{flex:1;margin:0;padding:14px 4px;border-radius:6px;font-size:19px;font-weight:700;color:#fff}
 .cbt .cy{background:#1485f0}.cbt .cn{background:#9fb4c0}.cbt .cr2{background:#e04b45}
+
+/* ===== تعديلات: الشريط العلوي + إصلاح قص الأسفل ===== */
+#tb{width:var(--W);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 3% 3px;direction:ltr}
+#tb #stt{flex:1;width:auto;height:auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbb{flex:none;display:flex;align-items:center;justify-content:center;gap:5px;height:30px;min-width:34px;padding:0 11px;margin:0;border-radius:15px;font-size:12px;font-weight:700;color:#cfe2ff;background:linear-gradient(180deg,#14396f,#0a1f45);border:1.5px solid #2f6fd0;box-shadow:0 0 8px #1b72ff55;-webkit-tap-highlight-color:transparent}
+.tbb:active{transform:scale(.94)}
+.tbb.rs{color:#ffd6d6;border-color:#d94540;background:linear-gradient(180deg,#5b1a24,#2d0c14);box-shadow:0 0 8px #ff4a4a44}
+.tbb.mu{border-color:#6b7a99;color:#9aa8c6}
+/* زر النرد يغطي حافة الفوتر بدل ما ينقص منه */
+#pb{position:relative;z-index:6}
+#ft{position:relative;z-index:1;margin-top:calc(var(--W)*-.048)}
+body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
 <div id="hd"><div id="gl">صافي الثروة للفوز : <b>—</b></div></div>
-<div id="stt"></div>
+<div id="tb"><button id="bmu" class="tbb mu" data-a="mute" aria-label="كتم الصوت">🔊</button><div id="stt"></div><button id="bws" class="tbb rs" data-a="resign_ask" aria-label="انسحاب">🏳️ انسحاب</button></div>
 <div id="pt" class="prow"></div>
 <div id="board"></div>
 <div id="pb" class="prow"><div id="pbl" class="slot"></div><button id="rb" data-a="roll" aria-label="ارم النرد" disabled>ارم النرد</button><div id="pbr" class="slot"></div></div>
@@ -205,7 +217,7 @@ const Q=new URLSearchParams(location.search),R=Q.get('r'),U=+Q.get('u'),T=Q.get(
 const COL={blue:'#2f7bff',red:'#ff4a4a',green:'#34d058',yellow:'#ffd33d'};
 const ICO={airport:'✈️',power:'💡',train:'🚆',harbor:'⛵'},KI={start:'🏁',chance:'❓',jail:'🔒',auction:'🔨'};
 const $=id=>document.getElementById(id);
-const f=n=>'$'+Number(n).toLocaleString('en-US');
+const f=n=>(n<0?'-$':'$')+Math.abs(Number(n)).toLocaleString('en-US');
 const STEP=560;               // مدة الخطوة الواحدة للقمع (مللي ثانية) — بطيء ليشوفه الكل
 const ARROW='<svg viewBox="0 0 40 40"><defs><radialGradient id="ag" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#e58a00"/></radialGradient></defs><circle cx="20" cy="20" r="18" fill="url(#ag)" stroke="#5a3a00" stroke-width="2.4"/><path d="M20 8 L31 20 H24.5 V31 H15.5 V20 H9 Z" fill="#fff6c8" stroke="#a86a00" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 const CROWN='<svg viewBox="0 0 34 30"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe680"/><stop offset="1" stop-color="#e08f00"/></linearGradient></defs><path d="M3 24 L1.5 8 L10 15 L17 3 L24 15 L32.5 8 L31 24 Z" fill="url(#cg)" stroke="#5a3a00" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="24" width="28" height="4" rx="1.5" fill="url(#cg)" stroke="#5a3a00" stroke-width="1.6"/></svg>';
@@ -216,6 +228,72 @@ const tg=window.Telegram&&Telegram.WebApp;if(tg){tg.ready();tg.expand();}
 let B=[],st=null,ws,tiles=[],shown={},walking=false,off=0,lastDice=0,shOpen=false,cEl,toks={};
 let rolling=false,flyDone=false,pendRes=null,flick=0,rollTO=0,diceAnim=null;
 const busy=()=>walking||rolling;
+
+/* ===== الأصوات (WebAudio، بدون ملفات خارجية) ===== */
+const SND=(function(){
+  let ctx=null,muted=false,nb=null;
+  try{muted=localStorage.getItem('rb_mute')==='1';}catch(e){}
+  function ac(){
+    if(!ctx){try{ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+    if(ctx.state==='suspended'){try{ctx.resume();}catch(e){}}
+    return ctx;
+  }
+  function noise(c){
+    if(nb)return nb;
+    nb=c.createBuffer(1,c.sampleRate*0.2,c.sampleRate);
+    const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    return nb;
+  }
+  /* نقرة نرد قصيرة: ضجيج مفلتر */
+  function tick(c,t,vol,freq){
+    const s=c.createBufferSource();s.buffer=noise(c);
+    const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=1.4;
+    const g=c.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);
+    s.connect(f);f.connect(g);g.connect(c.destination);s.start(t);s.stop(t+0.06);
+  }
+  function tone(c,t,f0,f1,dur,vol,type){
+    const o=c.createOscillator(),g=c.createGain();o.type=type||'sine';
+    o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur+0.02);
+  }
+  return{
+    get muted(){return muted;},
+    unlock(){if(!muted)ac();else if(ctx&&ctx.state==='suspended'){try{ctx.resume();}catch(e){}}},
+    toggle(){muted=!muted;try{localStorage.setItem('rb_mute',muted?'1':'0');}catch(e){}if(!muted)ac();return muted;},
+    /* تدحرج النرد: نقرات متتابعة تتباطأ */
+    dice(){
+      if(muted)return;const c=ac();if(!c)return;const t0=c.currentTime+0.02;
+      let t=0,gap=0.045;
+      while(t<1.05){tick(c,t0+t,0.5+Math.random()*0.35,1400+Math.random()*2400);t+=gap;gap*=1.09;}
+      tone(c,t0,180,90,0.12,0.25,'triangle');
+    },
+    /* استقرار النرد */
+    land(){
+      if(muted)return;const c=ac();if(!c)return;const t=c.currentTime+0.01;
+      tone(c,t,170,60,0.18,0.5,'sine');tick(c,t,0.7,900);
+    },
+    /* خطوة القمع */
+    step(){
+      if(muted)return;const c=ac();if(!c)return;const t=c.currentTime+0.01;
+      tone(c,t,620,340,0.09,0.32,'sine');tick(c,t,0.28,2200);
+    }
+  };
+})();
+['pointerdown','touchstart','keydown'].forEach(ev=>document.addEventListener(ev,()=>SND.unlock(),{passive:true}));
+function paintMute(){const b=$('bmu');if(b){b.textContent=SND.muted?'🔇':'🔊';b.classList.toggle('mu',SND.muted);b.setAttribute('aria-pressed',SND.muted);}}
+
+/* إنهاء الدور تلقائياً بعد اللعب/الشراء */
+let endKey='',endAt=0;
+function autoEnd(){
+  if(!st||st.phase!=='post'){endKey='';return;}
+  if(st.cur!==U||busy())return;
+  const k=st.round+'|'+st.cur,now=Date.now();
+  if(endKey===k&&now-endAt<4000)return;
+  endKey=k;endAt=now;
+  setTimeout(()=>{if(st&&st.phase==='post'&&st.cur===U&&!busy())send({a:'end'});},650);
+}
+
 
 /* مسار اللوحة: مع عقارب الساعة، يبدأ من خانة «بدء» (أسفل اليسار) ويصعد من الجهة اليسرى */
 function pos(i){
@@ -319,7 +397,7 @@ function walk(){
       if(a!==p.pos){const f=(p.pos-a+28)%28;shown[p.uid]=f<=14?(a+1)%28:(a+27)%28;moved=true;}
     }
     setTokens(moved);
-    if(moved)setTimeout(step,STEP);else{walking=false;panel();updateRB();}
+    if(moved){SND.step();setTimeout(step,STEP);}else{walking=false;panel();updateRB();}
   })();
 }
 
@@ -327,7 +405,7 @@ function walk(){
 function startRoll(res,uid){
   if(rolling)return;
   const d=$('dice');if(!d){if(res)setDice(res);return;}
-  rolling=true;flyDone=false;pendRes=res;
+  rolling=true;flyDone=false;pendRes=res;SND.dice();
   const src=(uid===U||uid==null)?$('rb'):(document.querySelector('.cw[data-uid="'+uid+'"]')||$('rb'));
   const a=src.getBoundingClientRect(),b=d.getBoundingClientRect();
   const dx=(a.left+a.width/2)-(b.left+b.width/2),dy=(a.top+a.height/2)-(b.top+b.height/2);
@@ -353,7 +431,7 @@ function maybeSettle(){
   }
   clearInterval(flick);clearTimeout(rollTO);
   if(diceAnim){diceAnim.cancel();diceAnim=null;}
-  setDice(pendRes);pendRes=null;flyDone=false;
+  setDice(pendRes);pendRes=null;flyDone=false;SND.land();
   let done=false;const fin=()=>{if(done)return;done=true;d.style.zIndex='';rolling=false;walk();panel();updateRB();};
   d.animate([{transform:'scale(1.2) rotate(-8deg)'},{transform:'scale(.96) rotate(3deg)'},{transform:'scale(1) rotate(0)'}],{duration:380,easing:'ease-out'});
   setTimeout(fin,700);   // يخلّي الكل يشوف الرقم قبل لا يتحرك القمع
@@ -367,7 +445,8 @@ function cancelRoll(){
 }
 function updateRB(){
   const b=$('rb');if(!b)return;
-  const can=!!st&&st.phase==='roll'&&st.cur===U&&!busy();
+  const me0=st&&st.players.find(p=>p.uid===U);
+  const can=!!st&&st.phase==='roll'&&st.cur===U&&!busy()&&!(me0&&me0.jail>0);
   b.classList.toggle('on',can);b.disabled=!can;
 }
 
@@ -394,8 +473,12 @@ function actions(s,me,mine){
   }else if(ph==='pick'&&mine){
     h+='<div>اختر العرض:</div>'+Object.entries(s.auction.offers).map(([u,t])=>K('pick',esc(nm(u))+': '+esc(B[t].name),'g','data-uid='+u)).join('')+K('cancel_offer','إلغاء','r');
   }else if(mine){
-    if(ph==='roll'){if(me.jail>0)h+=K('jail','ادفع $150 واخرج','g');}
-    if(ph==='post')h+=K('end','إنهاء الدور');
+    if(ph==='roll'&&me.jail>0){
+      h+=`<div>🔒 أنت بالسجن — باقي <b>${me.jail}</b> ${me.jail>2?'جولات':'جولة'}</div>`
+        +K('jail','ادفع $150 واخرج (تلعب الجولة الجاية)','g',me.cash<150?'style="opacity:.5"':'')
+        +K('stay','ابقَ بالسجن','g');
+    }
+    if(ph==='post')h+='<div class=lg>جاري إنهاء الدور…</div>';
   }
   return h;
 }
@@ -405,12 +488,12 @@ function panel(){
   let mid='';
   if(s.phase==='lobby')mid='<div>بانتظار بدء اللعبة…</div>';
   else{
-    mid=`<div>${mine?'<b>دورك!</b>':'دور <b>'+esc(cur?cur.name:'')+'</b>'} <span id="tm"></span></div>`;
+    mid=`${mine&&s.bonus&&s.phase==='roll'?'<div>🎲 رميت 6! ارمِ مرة ثانية</div>':''}<div>${mine?'<b>دورك!</b>':'دور <b>'+esc(cur?cur.name:'')+'</b>'} <span id="tm"></span></div>`;
     if(!busy()&&s.phase!=='over')mid+=actions(s,me,mine);
   }
-  const lg=s.events.filter(e=>e.text).slice(-2).map(e=>`<div class=lg>${esc(e.text)}</div>`).join('');
   syncCard();
-  cEl.innerHTML=`<div class=rd>الجولة ${s.round}${s.maxRounds?'/'+s.maxRounds:''}</div><div class=lgs>${lg}</div><div class=mid>${mid}</div>`;
+  setTimeout(autoEnd,0);
+  cEl.innerHTML=`<div class=rd>الجولة ${s.round}${s.maxRounds?'/'+s.maxRounds:''}</div><div class=mid>${mid}</div>`;
 }
 
 /* ===== بطاقة العقار: شراء/تمرير، تطوير/بيع ===== */
@@ -428,7 +511,7 @@ function syncCard(){
 function renderCard(){
   const i=ct,t=B[i],m=$('cm');if(!t||!st){closeCard();return;}
   const o=st.owner[i],ow=o&&st.players.find(p=>p.uid==o),h=st.houses[i]||0,city=t.kind==='city',mineT=o==U;
-  const rentNow=city?t.rent[h]:t.rent,sell=Math.floor(val(i)*.8);
+  const rentNow=city?(h===0&&o&&B.every((x,j)=>x.group!==t.group||st.owner[j]==o)?t.rent[0]*2:t.rent[h]):t.rent,sell=Math.floor(val(i)*.8);
   const hd=city?`background:${t.color};color:#fff`:'background:#fff;color:#6aa800';
   let body='';
   if(city||t.kind==='public'){
@@ -460,6 +543,14 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||!b.dataset.a)return;
   const d=b.dataset,a=d.a;
   if(a==='cclose'){if(!cardBuy)closeCard();return;}
+  if(a==='mute'){SND.toggle();paintMute();return;}
+  if(a==='resign_ask'){
+    if(!st||st.phase==='over')return;
+    const me=st.players.find(p=>p.uid===U);if(!me||me.bankrupt){toast('أنت خارج اللعبة');return;}
+    shOpen=true;$('sh').innerHTML='<div class=bx><h3 style="margin-bottom:8px">🏳️ تنسحب من اللعبة؟</h3><p style="margin:6px 0 12px;color:#9db8e8">راح تخرج من اللعبة وتخسر ممتلكاتك.</p><button class="r" data-a="resign_yes">نعم، انسحب</button><button class="g" data-a="resign_no">رجوع</button></div>';$('sh').hidden=false;return;
+  }
+  if(a==='resign_no'){shOpen=false;$('sh').hidden=true;return;}
+  if(a==='resign_yes'){shOpen=false;$('sh').hidden=true;send({a:'resign',tile:null,uid:null});return;}
   if(a==='roll'){
     if(!(st&&st.phase==='roll'&&st.cur===U)||busy())return;
     startRoll(null,U);send({a,tile:null,uid:null});return;
@@ -467,6 +558,7 @@ document.addEventListener('click',e=>{
   send({a,tile:d.tile!==undefined?+d.tile:null,uid:d.uid?+d.uid:null});
   if(a==='sell'||a==='buy'||a==='skip')closeCard();
 });
+setInterval(autoEnd,1000);
 setInterval(()=>{if(!st||!st.deadline)return;const r=Math.max(0,st.deadline-(Date.now()/1000+off));
   const el=$('tm');if(el)el.textContent='⏱ '+Math.ceil(r);
   TM=Math.max(TM,r);const bi=document.querySelector('.bar i');if(bi&&TM)bi.style.width=Math.min(100,r/TM*100)+'%';},250);
@@ -545,6 +637,7 @@ setInterval(()=>{if(!st||!st.deadline)return;const r=Math.max(0,st.deadline-(Dat
   function kb(){if(!vv)return;var off2=Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop));H.style.setProperty('--kb',off2+'px');if(isOpen)toEnd();}
   if(vv){vv.addEventListener('resize',kb);vv.addEventListener('scroll',kb);}
 })();
+paintMute();
 conn();
 </script>
 </body>
