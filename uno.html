@@ -84,7 +84,7 @@ const CC={r:'#ef3b36',y:'#f7c51e',g:'#2fb34a',b:'#2d7ff0'},$=id=>document.getEle
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const tg=window.Telegram&&Telegram.WebApp;if(tg){tg.ready();tg.expand();}
 const img=(c,cl='')=>`<img src="${IMG[c]||IMG.back}" class="${cl}" draggable="false">`;
-let st=null,ws,off=0,pend=null,lastTop=null,TM=0,mute=false,dead=false,lastPen;
+let st=null,ws,off=0,pend=null,lastTop=null,TM=0,mute=false,dead=false,lastPen,fails=0;
 const TC=p=>st&&st.mode==='team'&&st.teams&&st.teams[p.uid]!==undefined?(st.teams[p.uid]===st.teams[U]?'ally':'foe'):'';
 const tcls=p=>TC(p)?' '+TC(p):'',ttag=p=>TC(p)==='ally'?' 🔹':TC(p)==='foe'?' 🔸':'';
 /* ===== sound ===== */
@@ -101,7 +101,8 @@ function conn(){
   if(!R||!U||!T||!S){$('msg').textContent='رابط غير صالح، افتح اللعبة من البوت';return;}
   ws=new WebSocket(`wss://${S}/ws_uno?r=${R}&u=${U}&t=${T}&n=${encodeURIComponent(NM)}`);
   ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.t==='state')onState(m.s);else if(m.t==='err'){toast(m.m);if(m.fatal){dead=true;$('msg').textContent=m.m;try{ws.close()}catch(e){}}}};
-  ws.onclose=()=>{if(dead)return;$('msg').textContent='🔴 انقطع الاتصال… إعادة المحاولة';setTimeout(conn,1500);};
+  ws.onopen=()=>{fails=0};
+  ws.onclose=()=>{if(dead)return;fails++;$('msg').textContent=fails>3?'🔴 تعذّر الوصول للسيرفر… يُعاد المحاولة ('+fails+')':'🔴 انقطع الاتصال… إعادة المحاولة';setTimeout(conn,1500);};
 }
 const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
 /* ===== render ===== */
