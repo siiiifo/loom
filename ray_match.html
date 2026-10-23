@@ -165,7 +165,29 @@
   var seed = parseInt(q.get('s'), 10) || (1000 + ((Math.random() * 9000) | 0));
   var bestPrev = Math.max(0, parseInt(q.get('pb'), 10) || 0);
   var sym = {}, alive = [], tiles = [], sel = -1, matched = 0, hints = HINTS0, shufs = SHUF0, shufCount = 0, events = [], t0 = 0, over = false, sent = false, busy = false, hintT = 0;
-  function waiting() { return begin > 0 && Date.now() / 1000 < begin; }
+  // مزامنة الساعة: نحسب الفرق بين ساعة الجهاز وساعة السيرفر حتى يبدأ الجميع بنفس اللحظة
+  var skew = 0, synced = false;
+  function nowS() { return (Date.now() + skew) / 1000; }
+  function syncClock() {
+    if (begin <= 0) { synced = true; return; }
+    var done = false;
+    function ok(serverMs, t0r, t1r) { if (done) return; done = true; skew = serverMs - (t0r + t1r) / 2; synced = true; }
+    function fin() { if (!done) { done = true; synced = true; } }
+    setTimeout(fin, 3000);
+    var a = Date.now();
+    try {
+      fetch(location.href.split('#')[0].split('?')[0] + '?_=' + a, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+        var d = r.headers.get('Date'), b = Date.now(); var ms = d ? Date.parse(d) : NaN;
+        if (!isNaN(ms)) ok(ms + 500, a, b); else throw 0;
+      }).catch(function () {
+        var a2 = Date.now();
+        fetch('https://worldtimeapi.org/api/ip', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+          var b2 = Date.now(); if (j && j.unixtime) ok(j.unixtime * 1000 + 500, a2, b2); else fin();
+        }).catch(fin);
+      });
+    } catch (e) { fin(); }
+  }
+  function waiting() { return begin > 0 && (!synced || nowS() < begin); }
   function dt() { return t0 ? Math.round((Date.now() - t0) / 100) : 0; }
 
   function init() {
@@ -290,7 +312,7 @@
   }
   function tick() {
     if (!waiting()) { $('cd').hidden = true; return; }
-    $('cd').hidden = false; $('cdn').textContent = Math.ceil(begin - Date.now() / 1000); setTimeout(tick, 200);
+    $('cd').hidden = false; $('cdn').textContent = synced ? Math.max(0, Math.ceil(begin - nowS())) : '…'; setTimeout(tick, 200);
   }
 /* ===== مشترك MQTT خفيف (WebSocket): البديل الأساسي لـ ntfy لما يرفض الاستضافة (429) ===== */
 function rayMqtt(filters,onMsg,urls){
@@ -351,7 +373,7 @@ function rayMqtt(filters,onMsg,urls){
   if (demo) window.__mj = { seed: function () { return seed; }, POS: POS, sym: function () { return sym; }, alive: function () { return alive; }, isFree: function (i) { return isFree(i, alive); }, events: function () { return events; }, encode: encode, computeScore: computeScore, over: function () { return over; } };
 
   window.addEventListener('resize', layout); window.addEventListener('orientationchange', function () { setTimeout(layout, 150); });
-  mkPlates(); init(); build(); setCount(); tick(); listen();
+  syncClock(); mkPlates(); init(); build(); setCount(); tick(); listen();
 })();
 </script>
 </body>
