@@ -162,14 +162,25 @@
 
   // ===== المعطيات =====
   var q = new URLSearchParams(location.search), demo = !q.get('s');
-  var begin = parseInt(q.get('b'), 10) || 0, relay = (q.get('r') || '').replace(/[^A-Za-z0-9_-]/g, ''), ended = false;
+  var HOST = (q.get('h') || '').replace(/[^A-Za-z0-9.-]/g, ''), begin = parseInt(q.get('b'), 10) || 0, relay = (q.get('r') || '').replace(/[^A-Za-z0-9_-]/g, ''), ended = false;
   var seed = parseInt(q.get('s'), 10) || (1000 + ((Math.random() * 9000) | 0));
   var bestPrev = Math.max(0, parseInt(q.get('pb'), 10) || 0);
   var sym = {}, alive = [], tiles = [], sel = -1, matched = 0, hints = HINTS0, shufs = SHUF0, shufCount = 0, events = [], t0 = 0, over = false, sent = false, busy = false, hintT = 0;
   // مزامنة الساعة: نحسب الفرق بين ساعة الجهاز وساعة السيرفر حتى يبدأ الجميع بنفس اللحظة
-  var skew = 0, synced = false, syncOk = false, syncSrc = '', VER = 'v3';
+  var skew = 0, synced = false, syncOk = false, syncSrc = '', VER = 'v4', bestRtt = 0;
   function nowS() { return (Date.now() + skew) / 1000; }
   function getServerTime() {
+    // الأساس: ساعة سيرفر البوت نفسه (نفس الساعة اللي حُسب منها وقت البدء) بدقة أجزاء من الثانية
+    if (HOST) {
+      var a0 = Date.now();
+      return fetch('https://' + HOST + '/time?_=' + a0 + Math.random().toString(36).slice(2, 6), { cache: 'no-store' })
+        .then(function (r) { return r.text(); })
+        .then(function (t) { var b0 = Date.now(), ms = parseFloat(t); if (!(ms > 1e12)) throw 0; return { ms: ms, a: a0, b: b0, src: 'srv' }; })
+        .catch(function () { return getServerTimeOld(); });
+    }
+    return getServerTimeOld();
+  }
+  function getServerTimeOld() {
     // يرجع وعداً بـ {ms, a, b}: وقت السيرفر + لحظتي الإرسال والاستلام
     var a = Date.now();
     return fetch(location.href.split('#')[0].split('?')[0] + '?_=' + a + Math.random().toString(36).slice(2, 6), { method: 'HEAD', cache: 'no-store' }).then(function (r) {
@@ -187,18 +198,25 @@
   }
   function showInfo() {
     var e = $('cdi'); if (!e) return;
-    e.textContent = VER + ' · ' + (syncOk ? ('sync ok (' + syncSrc + ') ' + (skew >= 0 ? '+' : '') + (skew / 1000).toFixed(1) + 's') : (synced ? 'sync FAILED' : 'syncing...'));
+    e.textContent = VER + ' · ' + (syncOk ? ('sync ok (' + syncSrc + ', ' + bestRtt + 'ms) ' + (skew >= 0 ? '+' : '') + (skew / 1000).toFixed(1) + 's') : (synced ? 'sync FAILED' : 'syncing...'));
+  }
+  function applySample(r) {
+    var rtt = r.b - r.a;
+    // نفضّل قياس سيرفر البوت، وبين القياسات من نفس المصدر ناخذ الأسرع (أدق)
+    var better = !syncOk || (r.src === 'srv' && syncSrc !== 'srv') || (r.src === syncSrc && rtt <= bestRtt);
+    if (!better) return;
+    skew = r.ms - (r.a + r.b) / 2; bestRtt = rtt; syncOk = true; syncSrc = r.src; synced = true; showInfo();
   }
   function syncClock() {
     if (begin <= 0) { synced = true; return; }
-    var tries = 0, t0s = Date.now();
+    var tries = 0, extra = 0;
+    function more() {
+      if (extra++ >= 8 || !waiting()) return;
+      getServerTime().then(applySample).catch(function () {}).then(function () { setTimeout(more, extra < 4 ? 250 : 1500); });
+    }
     function attempt() {
       tries++;
-      getServerTime().then(function (r) {
-        skew = r.ms - (r.a + r.b) / 2; syncOk = true; syncSrc = r.src; synced = true; showInfo();
-        // إعادة قياس مرة ثانية لتحسين الدقة وأخذ القياس الأسرع
-        if (tries < 3) setTimeout(function () { getServerTime().then(function (r2) { if (r2.b - r2.a <= r.b - r.a) { skew = r2.ms - (r2.a + r2.b) / 2; showInfo(); } }).catch(function () {}); }, 700);
-      }).catch(function () {
+      getServerTime().then(function (r) { applySample(r); more(); }).catch(function () {
         if (tries < 4) setTimeout(attempt, 1500);
         else { synced = true; showInfo(); }
       });
