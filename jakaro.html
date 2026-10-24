@@ -198,15 +198,28 @@ let S_=null,ws=null,dead=false,off=0,sel={ci:-1,prefix:[],m:null},seenChat=0;
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)}
 function connect(){
   if(dead)return;
+  if(ws&&ws.readyState<=1)return;
   ws=new WebSocket(`wss://${SV}/ws_jk?r=${encodeURIComponent(R)}&u=${UID}&t=${T}`);
   ws.onmessage=e=>{const m=JSON.parse(e.data);
     if(m.t==='state')onState(m.s);
     else if(m.t==='chat')onChat(m);
     else if(m.t==='chatlog'){chatLog=m.l||[];unread=0;drawBadge();drawLog()}
     else if(m.t==='err'){toast(m.m);if(m.fatal){dead=true;$('load').style.display='flex';$('ldt').textContent=m.m;try{ws.close()}catch(e){}}}};
-  ws.onclose=()=>{if(!dead)setTimeout(connect,1500)};
+  const w=ws;ws.onopen=()=>{tries=0};
+  ws.onclose=()=>{if(dead||ws!==w)return;tries++;setTimeout(connect,Math.min(8000,1200*Math.pow(1.5,tries))+Math.random()*800)};
 }
-function send(o){try{ws.send(JSON.stringify(o))}catch(e){toast('انقطع الاتصال، جاري إعادة المحاولة...')}}
+
+let hidAt=0,tries=0;
+function wake(force){
+  if(dead||!ws)return;
+  if(ws.readyState>1){connect();return}
+  if(ws.readyState===1&&force){const o=ws;ws=null;try{o.onclose=null;o.close()}catch(e){}connect()}
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hidAt=Date.now();else wake(Date.now()-hidAt>4000)});
+addEventListener('online',()=>wake(true));
+addEventListener('pageshow',e=>{if(e.persisted)wake(true)});
+
+function send(o){if(ws&&ws.readyState===1){try{ws.send(JSON.stringify(o));return}catch(e){}}toast('انقطع الاتصال، جاري إعادة المحاولة...');wake(true)}
 const me=()=>S_&&S_.players.find(p=>p.uid===UID);
 const pname=u=>{const p=S_&&S_.players.find(x=>x.uid===u);return p?p.name:''};
 const myTurn=()=>S_&&S_.phase==='play'&&S_.cur===UID;

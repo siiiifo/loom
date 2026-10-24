@@ -172,12 +172,23 @@ function demo(){const P=[{uid:U||1,name:NM,n:7},{uid:2,name:'الزعيم',n:5},
 function conn(){
   if(Q.get('demo')||!R){demo();return;}
   if(!R||!U||!T||!S){$('msg').textContent='رابط غير صالح، افتح اللعبة من البوت';return;}
+  if(ws&&ws.readyState<=1)return;
   ws=new WebSocket(`wss://${S}/ws_uno?r=${R}&u=${U}&t=${T}&n=${encodeURIComponent(NM)}`);
   ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.t==='state')onState(m.s);else if(m.t==='err'){toast(m.m);if(m.fatal){dead=true;$('msg').textContent=m.m;try{ws.close()}catch(e){}}}};
   ws.onopen=()=>{fails=0};
-  ws.onclose=()=>{if(dead)return;fails++;$('msg').textContent=fails>3?'🔴 تعذّر الوصول للسيرفر… يُعاد المحاولة ('+fails+')':'🔴 انقطع الاتصال… إعادة المحاولة';setTimeout(conn,1500);};
+  const w=ws;ws.onclose=()=>{if(dead||ws!==w)return;fails++;$('msg').textContent=fails>3?'🔴 تعذّر الوصول للسيرفر… يُعاد المحاولة ('+fails+')':'🔴 انقطع الاتصال… إعادة المحاولة';setTimeout(conn,Math.min(8000,1200*Math.pow(1.5,fails))+Math.random()*800);};
 }
-const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
+
+let hidAt=0;
+function wake(force){
+  if(dead||!ws)return;
+  if(ws.readyState>1){conn();return}
+  if(ws.readyState===1&&force){const o=ws;ws=null;try{o.onclose=null;o.close()}catch(e){}conn()}
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hidAt=Date.now();else wake(Date.now()-hidAt>4000)});
+addEventListener('online',()=>wake(true));
+addEventListener('pageshow',e=>{if(e.persisted)wake(true)});
+const send=o=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));else{toast('⚠️ الاتصال متقطع… جاري إعادة الاتصال');wake(true)}};
 /* ===== render ===== */
 function onState(s){
   const first=!st;st=s;off=s.now-Date.now()/1000;

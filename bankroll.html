@@ -311,16 +311,27 @@ function val(i){const t=B[i];return t.price+(t.kind==='city'?(st.houses[i]||0)*t
 
 function conn(){
   if(!R||!U||!T||!S){$('stt').textContent='رابط غير صالح، افتح اللعبة من البوت';return;}
+  if(ws&&ws.readyState<=1)return;
   $('stt').textContent='جاري الاتصال…';
   ws=new WebSocket(`wss://${S}/ws?r=${R}&u=${U}&t=${T}`);
-  ws.onopen=()=>$('stt').textContent='🟢 متصل مباشر';
+  ws.onopen=()=>{tries=0;$('stt').textContent='🟢 متصل مباشر'};
   ws.onmessage=e=>{const m=JSON.parse(e.data);
     if(m.t==='hello'){B=m.board;build();}
     else if(m.t==='state')onState(m.s);
     else if(m.t==='err'){toast(m.m);cancelRoll();}};
-  ws.onclose=()=>{$('stt').textContent='🔴 انقطع الاتصال… إعادة المحاولة';setTimeout(conn,1500);};
+  const w=ws;ws.onclose=()=>{if(ws!==w)return;tries++;$('stt').textContent='🔴 انقطع الاتصال… إعادة المحاولة';setTimeout(conn,Math.min(8000,1200*Math.pow(1.5,tries))+Math.random()*800);};
 }
-const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
+
+let hidAt=0,tries=0;
+function wake(force){
+  if(false||!ws)return;
+  if(ws.readyState>1){conn();return}
+  if(ws.readyState===1&&force){const o=ws;ws=null;try{o.onclose=null;o.close()}catch(e){}conn()}
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hidAt=Date.now();else wake(Date.now()-hidAt>4000)});
+addEventListener('online',()=>wake(true));
+addEventListener('pageshow',e=>{if(e.persisted)wake(true)});
+const send=o=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));else{toast('⚠️ الاتصال متقطع… جاري إعادة الاتصال');wake(true)}};
 
 function build(){
   const bd=$('board');bd.innerHTML='';tiles=[];toks={};

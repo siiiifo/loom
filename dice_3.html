@@ -89,14 +89,16 @@ function die(n,cls,idx){var mini=(cls||'').indexOf('mini')>=0,k=n>=1&&n<=6?n:(id
 function me(){return S?S.p.indexOf(U):-1}
 function mine(){return S&&!S.o&&S.p[S.t]==U}
 function fatal(m){DEAD=true;var ov=document.getElementById('ov');ov.style.display='flex';ov.innerHTML=esc(m||'انتهت اللعبة')}
-function conn(){var w=new WebSocket('wss://'+H+'/ws_yz?r='+encodeURIComponent(R)+'&u='+U+'&t='+T);WS=w;
+var TR=0,HID=0;function wake(f){if(DEAD||!WS)return;if(WS.readyState>1){conn();return}if(WS.readyState===1&&f){var o=WS;WS=null;try{o.onclose=null;o.close()}catch(x){}conn()}}
+document.addEventListener('visibilitychange',function(){if(document.hidden)HID=Date.now();else wake(Date.now()-HID>4000)});addEventListener('online',function(){wake(true)});addEventListener('pageshow',function(e){if(e.persisted)wake(true)});
+function conn(){if(WS&&WS.readyState<=1)return;var w=new WebSocket('wss://'+H+'/ws_yz?r='+encodeURIComponent(R)+'&u='+U+'&t='+T);WS=w;
 w.onmessage=function(e){try{var s=JSON.parse(e.data);if(s.t==='err'){fatal(s.m);return}if(s.c){chatIn(s.c,s.ts,s.id);return}if(s.av!=null){AV[s.av]=s.img;if(S)render();return}if(!S||s.n>S.n)apply(s)}catch(x){}};
-w.onclose=function(){if(WS===w&&!DEAD)setTimeout(conn,1500)};w.onerror=function(){try{w.close()}catch(x){}}}
+w.onopen=function(){TR=0};w.onclose=function(){if(WS===w&&!DEAD){TR++;setTimeout(conn,Math.min(8000,1200*Math.pow(1.5,TR))+Math.random()*800)}};w.onerror=function(){try{w.close()}catch(x){}}}
 function apply(s){var p=S;S=s;BL=0;rcv=Date.now();if(!p||p.t!=s.t||s.rl==3){sel=-1;held=[0,0,0,0,0]}
 if(!mine())held=s.h.map(Number);
 if(live&&p&&s.rl<3&&(p.rl!=s.rl||p.t!=s.t)){anim=Date.now()+650;var iv=setInterval(function(){rdice();if(Date.now()>anim){clearInterval(iv);rdice()}},90)}
 render()}
-function send(o){try{if(WS&&WS.readyState===1)WS.send(JSON.stringify(o))}catch(e){}}
+function send(o){try{if(WS&&WS.readyState===1)WS.send(JSON.stringify(o));else wake(true)}catch(e){}}
 function render(){if(!S)return;var m=me(),o=1-m,i;
 var h='',ord=[o,m];for(i=0;i<2;i++){var k=ord[i],on=!S.o&&S.t==k;h+=(i?'<div class="vs">VS</div>':'')+'<div class="sc">'+tot(S.s[k]).t+'</div><div class="pl'+(on?' on':'')+'"><div class="av">'+(AV[k]?'<img alt="" src="data:image/jpeg;base64,'+AV[k]+'">':(S.nm[k]||'?').charAt(0))+'</div>'+'<span class="nm">'+esc(k==m?'أنت':S.nm[k])+'</span>'+bub(k)+'</div>'}
 document.getElementById('head').innerHTML=h.replace('<div class="vs">VS</div><div class="sc">'+tot(S.s[m]).t+'</div>','<div class="vs">VS</div><div class="sc">'+tot(S.s[m]).t+'</div>');
