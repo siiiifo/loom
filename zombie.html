@@ -270,7 +270,7 @@ const sr=()=>stage.getBoundingClientRect();
 function rel(r){const s=sr();return{x:r.left-s.left,y:r.top-s.top,w:r.width,h:r.height,cx:r.left-s.left+r.width/2,cy:r.top-s.top+r.height/2}}
 const cqw=()=>sr().width/100;
 function seatKey(uid){const P=st.players,n=P.length,mi=P.findIndex(p=>p.uid===U),k=(P.findIndex(p=>p.uid===uid)-mi+n)%n;
-  if(!k)return'me';return n===2?'t':n===3?(k===1?'r':'l'):['r','t','l'][k-1]}
+  if(!k)return'me';return n===2?'t':n===3?(k===1?'l':'r'):['l','t','r'][k-1]}
 const pname=uid=>{const p=st.players.find(p=>p.uid===uid);return p?p.name:'؟'};
 function handCenter(k){ // مركز يد اللاعب بالإحداثيات النسبية للمسرح
   if(k==='me'){return rel($('hand').getBoundingClientRect())}
@@ -462,8 +462,11 @@ function startDemo(){
   const N=Math.max(2,Math.min(4,+Q.get('n')||4)),names=['أنت','Turfmonster3','s2ana','soniya_69'];
   const pk=c=>c.slice(0,-1)+('HD'.includes(c.slice(-1))?'r':'k');
   const D=DM={players:names.slice(0,N).map((n,i)=>({uid:i+1,name:n})),hands:{},pairs:[],out:[],cur:0,seq:0,ev:null,phase:'play',loser:null,deadline:0,timer:null};
-  let deck=[];RANKS.forEach(r=>'SHDC'.split('').forEach(s=>deck.push(r+s)));deck.push('Z');deck.sort(()=>Math.random()-.5);
-  D.players.forEach(p=>D.hands[p.uid]=[]);deck.forEach((c,i)=>D.hands[D.players[i%N].uid].push(c));
+  {const total=RANKS.length*4+1;let caps=[...Array(N)].map((_,i)=>Math.floor(total/N)+(i<total%N?1:0)).sort(()=>Math.random()-.5);
+   const hs=[...Array(N)].map(()=>[]),zi=caps.indexOf(Math.max(...caps));hs[zi].push('Z');caps[zi]--;
+   const cl={};RANKS.forEach(r=>'SHDC'.split('').forEach(s=>{(cl[pk(r+s)]=cl[pk(r+s)]||[]).push(r+s)}));
+   Object.values(cl).sort(()=>Math.random()-.5).forEach(g=>{g.sort(()=>Math.random()-.5);const o=[...Array(N).keys()].sort((a,b)=>caps[b]-caps[a]||Math.random()-.5);hs[o[0]].push(g[0]);hs[o[1]].push(g[1]);caps[o[0]]--;caps[o[1]]--});
+   D.players.forEach((p,i)=>D.hands[p.uid]=hs[i])}
   const n0={},thrown={};
   const strip=u=>{const h=D.hands[u],out=[],seen={};[...h].forEach(c=>{if(c==='Z')return;const k=pk(c);if(seen[k]){const a=seen[k];delete seen[k];h.splice(h.indexOf(a),1);h.splice(h.indexOf(c),1);out.push([a,c])}else seen[k]=c});D.pairs.push(...out);return out};
   D.players.forEach(p=>{n0[p.uid]=D.hands[p.uid].length;thrown[p.uid]=strip(p.uid)});
@@ -474,7 +477,8 @@ function startDemo(){
   const alive=()=>D.players.filter(p=>D.hands[p.uid].length).map(p=>p.uid);
   D.cur=D.players.findIndex(p=>p.uid===alive()[0]);
   const nextAlive=u=>{const i=D.players.findIndex(p=>p.uid===u);for(let k=1;k<=N;k++){const x=D.players[(i+k)%N].uid;if(D.hands[x].length)return x}};
-  const victim=()=>{const v=nextAlive(D.players[D.cur].uid);return v===D.players[D.cur].uid?null:v};
+  const prevAlive=u=>{const i=D.players.findIndex(p=>p.uid===u);for(let k=1;k<=N;k++){const x=D.players[(i-k+N*4)%N].uid;if(D.hands[x].length)return x}};
+  const victim=()=>{const v=prevAlive(D.players[D.cur].uid);return v===D.players[D.cur].uid?null:v};
   const view=()=>({now:Date.now()/1000,phase:D.phase,cur:D.phase==='play'?D.players[D.cur].uid:null,victim:D.phase==='play'?victim():null,deadline:Date.now()/1000+25,turn:25,
     ev:D.ev&&D.ev.type==='draw'&&![D.ev.to,D.ev.from].includes(1)?{...D.ev,card:null}:D.ev,host:1,loser:D.loser,out:D.out,ranks:RANKS,pairs:D.pairs.slice(-6),npairs:D.pairs.length,
     players:D.players.map(p=>({uid:p.uid,name:p.name,n:D.hands[p.uid].length})),hand:[...D.hands[1]]});
