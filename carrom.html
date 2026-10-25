@@ -65,7 +65,6 @@ body{background:linear-gradient(180deg,rgb(2,20,50) 0%,rgb(10,31,65) 6%,rgb(0,16
 #emo2.show{display:grid}#emo2 button{background:none;border:0;font-size:calc(var(--c)*6.4);height:calc(var(--c)*9);padding:0}
 #cbar{position:relative;display:flex;align-items:center;gap:calc(var(--c)*2);height:calc(var(--c)*10.4);padding:0 calc(var(--c)*1.6);border-radius:calc(var(--c)*6);background:var(--cbg);border:calc(var(--c)*.6) solid var(--pillb);box-shadow:0 calc(var(--c)*.8) calc(var(--c)*2.4) #0004}
 #cbar button{flex:none;width:calc(var(--c)*7.6);height:calc(var(--c)*7.6);border-radius:50%;border:0;padding:0;display:flex;align-items:center;justify-content:center;background:none;font-size:calc(var(--c)*5.6);line-height:1;color:#fff;font-family:inherit}
-#snb.off{opacity:.55}
 #csd{background:var(--acc)!important}#csd svg{width:calc(var(--c)*4.2);height:calc(var(--c)*4.2);fill:#fff}
 #cin{flex:1;min-width:0;height:100%;background:transparent;border:0;outline:0;color:var(--ink);font:max(16px,calc(var(--c)*4)) system-ui,Tahoma;text-align:right;direction:rtl;user-select:text;-webkit-user-select:text}
 #cin::placeholder{color:var(--ink2);opacity:.75}
@@ -86,7 +85,7 @@ html,body{position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:
 </div>
 <div id="ov"><div class="card" id="card"></div></div>
 <div id="cprobe"></div>
-<div id="cdock"><div id="chatp" hidden><div id="chatl"></div></div><div id="emo2"></div><div id="cbar"><button id="snb" aria-label="sound">🔊</button><button id="est" aria-label="emoji">😊</button><input id="cin" maxlength="100" placeholder="اكتب رسالتك..." autocomplete="off" enterkeyhint="send"><button id="csd" aria-label="send"><svg viewBox="0 0 24 24"><path d="M3 11.2L20.6 3.4c.8-.3 1.5.4 1.2 1.2L14 22c-.4.9-1.7.8-1.9-.2l-1.4-6.5-6.5-1.4c-1-.2-1.1-1.5-.2-1.9z" transform="rotate(-8 12 12) scale(-1 1) translate(-24 0)"/></svg></button><button id="cbadge" hidden></button></div></div>
+<div id="cdock"><div id="chatp" hidden><div id="chatl"></div></div><div id="emo2"></div><div id="cbar"><button id="est" aria-label="emoji">😊</button><input id="cin" maxlength="100" placeholder="اكتب رسالتك..." autocomplete="off" enterkeyhint="send"><button id="csd" aria-label="send"><svg viewBox="0 0 24 24"><path d="M3 11.2L20.6 3.4c.8-.3 1.5.4 1.2 1.2L14 22c-.4.9-1.7.8-1.9-.2l-1.4-6.5-6.5-1.4c-1-.2-1.1-1.5-.2-1.9z" transform="rotate(-8 12 12) scale(-1 1) translate(-24 0)"/></svg></button><button id="cbadge" hidden></button></div></div>
 <script>
 /* قفل سحب تيليجرام من أول لحظة (قبل أي كود ثاني) */
 (function(){const T=window.Telegram&&Telegram.WebApp;if(!T)return;
@@ -113,7 +112,7 @@ const SP={};for(const k in IMG){const i=new Image();i.src=IMG[k];SP[k]=i}
    • معاينة التصميم بدون سيرفر: ?demo=1&mode=1v1|2v2&seat=0..3                                     */
 const D=1254,CR=18,SR=36,PR=34,R=160,VM=9.5,FRIC=.991,WALL_E=.82,HW=359,HH=318;
 const PK=[[-331,-301],[331,-301],[-331,301],[331,301]];                        // لازم تطابق carrom_server.py
-const LANE={0:[247,168],1:[270,134],2:[247,168],3:[270,134]};                    // [بُعد الخط عن المركز, نصف طوله]
+const LANE={0:[247,214],1:[270,190],2:[247,214],3:[270,190]};                    // [بُعد الخط عن المركز, نصف طوله]
 const ROT=[[1,0,0,1],[0,-1,1,0],[-1,0,0,-1],[0,1,-1,0]];
 const TEAM_PILL_ONCE=false;     // false: نقاط الفريق تظهر عند كل لاعب (true: مرة وحدة لكل فريق بنمط 2-2)
 const q=new URLSearchParams(location.search);
@@ -139,18 +138,18 @@ function subStep(bodies,out){
   for(let i=0;i<n;i++){const o=bodies[i];o[0]+=o[2];o[1]+=o[3];o[2]*=FRIC;o[3]*=FRIC;
     for(const p of PK){const dx=o[0]-p[0],dy=o[1]-p[1];if(Math.sqrt(dx*dx+dy*dy)<lim){pk[i]=true;break}}
     if(pk[i])continue;const r=o[4];
-    if(o[0]<-HW+r){snd(Math.abs(o[2]),3);o[0]=-HW+r;o[2]=Math.abs(o[2])*WALL_E}
-    if(o[0]>HW-r){snd(Math.abs(o[2]),3);o[0]=HW-r;o[2]=-Math.abs(o[2])*WALL_E}
-    if(o[1]<-HH+r){snd(Math.abs(o[3]),3);o[1]=-HH+r;o[3]=Math.abs(o[3])*WALL_E}
-    if(o[1]>HH-r){snd(Math.abs(o[3]),3);o[1]=HH-r;o[3]=-Math.abs(o[3])*WALL_E}}
+    if(o[0]<-HW+r){o[0]=-HW+r;o[2]=Math.abs(o[2])*WALL_E}
+    if(o[0]>HW-r){o[0]=HW-r;o[2]=-Math.abs(o[2])*WALL_E}
+    if(o[1]<-HH+r){o[1]=-HH+r;o[3]=Math.abs(o[3])*WALL_E}
+    if(o[1]>HH-r){o[1]=HH-r;o[3]=-Math.abs(o[3])*WALL_E}}
   for(let i=0;i<n;i++){if(pk[i])continue;const a=bodies[i];
     for(let j=i+1;j<n;j++){if(pk[j])continue;const b=bodies[j];const dx=b[0]-a[0];if(dx>54||dx<-54)continue;
       const dy=b[1]-a[1],d=Math.sqrt(dx*dx+dy*dy),m=a[4]+b[4];if(d>=m||d===0)continue;
       const nx=dx/d,ny=dy/d,ma=a[5]==='s'?1.6:1,mb=b[5]==='s'?1.6:1,ov=m-d;
       a[0]-=nx*ov*mb/(ma+mb);a[1]-=ny*ov*mb/(ma+mb);b[0]+=nx*ov*ma/(ma+mb);b[1]+=ny*ov*ma/(ma+mb);
-      const rv=(b[2]-a[2])*nx+(b[3]-a[3])*ny;if(rv>0)continue;snd(-rv,(a[5]==='s'||b[5]==='s')?1:0);const j2=-1.9*rv/(1/ma+1/mb);
+      const rv=(b[2]-a[2])*nx+(b[3]-a[3])*ny;if(rv>0)continue;const j2=-1.9*rv/(1/ma+1/mb);
       a[2]-=j2*nx/ma;a[3]-=j2*ny/ma;b[2]+=j2*nx/mb;b[3]+=j2*ny/mb}}
-  if(pk.some(Boolean)){const keep=[];for(let i=0;i<n;i++){if(pk[i]){out.push([bodies[i][6],bodies[i][5]]);snd(5,2)}else keep.push(bodies[i])}bodies.length=0;keep.forEach(b=>bodies.push(b))}
+  if(pk.some(Boolean)){const keep=[];for(let i=0;i<n;i++){if(pk[i]){out.push([bodies[i][6],bodies[i][5]])}else keep.push(bodies[i])}bodies.length=0;keep.forEach(b=>bodies.push(b))}
 }
 
 // ---------- الشبكة ----------
@@ -357,31 +356,8 @@ function tut(i=0){paused=true;const s=STEPS[i];$('card').innerHTML=`<h2>${s.t}</
   $('nx').onclick=()=>{if(i<2)tut(i+1);else{try{localStorage.setItem('carrom_tut','1')}catch(e){}$('ov').style.display='none';paused=false;ui()}}}
 $('help').onclick=()=>tut(0);
 
-// ---------- الصوت (يتولّد بالكود، بدون ملفات) ----------
-let AC=null,MG=null,NB=null,sndOn=true;const lastSnd=[0,0,0,0];
-try{sndOn=localStorage.getItem('carrom_snd')!=='0'}catch(e){}
-function audioInit(){if(AC){if(AC.state==='suspended')AC.resume();return}
-  try{AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=.5;MG.connect(AC.destination);
-    NB=AC.createBuffer(1,Math.floor(AC.sampleRate*.2),AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(e){AC=null}}
-function tone(type,f0,f1,dur,vol,t){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
-  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(MG);o.start(t);o.stop(t+dur+.02)}
-function noise(freq,dur,vol,t,type){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=NB;f.type=type||'lowpass';f.frequency.value=freq;
-  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(MG);s.start(t);s.stop(t+dur)}
-// k: 0 حبة×حبة، 1 مهاجم يضرب، 2 دخول جيب، 3 جدار — v = سرعة الاصطدام
-function snd(v,k){if(!sndOn||!AC||AC.state!=='running'||document.hidden)return;
-  const t=AC.currentTime;if(t-lastSnd[k]<.04)return;const a=Math.min(1,v/6);if(k!==2&&a<.05)return;lastSnd[k]=t;
-  if(k===0){tone('triangle',1100,700,.05,.05+.2*a,t);noise(4000,.025,.08*a,t,'highpass')}
-  else if(k===1){tone('sine',320,130,.09,.06+.28*a,t);noise(2500,.03,.12*a,t)}
-  else if(k===2){tone('sine',620,200,.16,.2,t);noise(500,.08,.1,t)}
-  else{noise(700,.07,.18*a,t);tone('sine',140,90,.07,.12*a,t)}}
-addEventListener('pointerdown',audioInit,true);
-const snb=$('snb');function snbUi(){snb.textContent=sndOn?'🔊':'🔇';snb.classList.toggle('off',!sndOn)}snbUi();
-snb.onclick=()=>{sndOn=!sndOn;try{localStorage.setItem('carrom_snd',sndOn?'1':'0')}catch(e){}snbUi();
-  if(sndOn){audioInit();if(AC)AC.resume().then(()=>snd(6,1)).catch(()=>{})}};
-
 // ---------- الدردشة (نفس نمط الزومبي) ----------
 function chatH(){const c=Math.min(innerWidth/100,4.4);return Math.ceil(c*13.2+$('cprobe').offsetHeight)}   // مساحة شريط الدردشة أسفل المسرح
-function tick(){if(!sndOn||!AC||AC.state!=='running')return;const t=AC.currentTime;tone('sine',900,700,.05,.07,t)}
 const chatRecv=(()=>{const P=$('chatp'),L=$('chatl'),B=$('cbadge'),CI=$('cin'),seen={};let open=false,unread=0,swallow=false,last=0;
   const EM=['😂','🔥','👏','😍','😎','🎉','❤️','😮','🙏','😡','😭','🤩','👍','💯','🎯','💥'];
   EM.forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>say(e);$('emo2').appendChild(b)});
@@ -390,7 +366,7 @@ const chatRecv=(()=>{const P=$('chatp'),L=$('chatl'),B=$('cbadge'),CI=$('cin'),s
   function add(m,quiet){if(m.i&&seen[m.i])return;if(m.i)seen[m.i]=1;const mine=String(m.u)===String(MYUID);
     if(L.children.length>=100)L.firstChild.remove();
     const d=document.createElement('div');d.className='cm'+(mine?' me':'');const b=document.createElement('b'),t=document.createElement('span');b.textContent=String(m.n||'').slice(0,20);t.textContent=String(m.m||'').slice(0,100);d.append(b,t);L.appendChild(d);
-    if(open)L.scrollTop=L.scrollHeight;else if(!mine&&!quiet){unread++;upd();tick()}}
+    if(open)L.scrollTop=L.scrollHeight;else if(!mine&&!quiet){unread++;upd()}}
   function say(t){t=String(t||'').trim().slice(0,100);if(!t||Date.now()-last<1000)return;last=Date.now();$('emo2').classList.remove('show');CI.value='';
     if(DEMO)add({i:'d'+Date.now(),u:MYUID,n:'أنت',m:t});else send({a:'chat',m:t})}
   CI.addEventListener('focus',()=>setOpen(true));CI.addEventListener('click',()=>setOpen(true));B.onclick=()=>setOpen(true);
