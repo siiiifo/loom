@@ -111,6 +111,8 @@ body.zt,html.zt{background:#1d3b33}
 @keyframes sp{from{transform:translate(0,0) scale(.3) rotate(0);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(1.2) rotate(180deg);opacity:0}}
 .top{position:absolute;top:9cqw;width:11cqw;height:11cqw;border-radius:50%;background:#1b1f3dcc;color:#fff;border:0;display:flex;align-items:center;justify-content:center;z-index:8;transform:translate(-50%,-50%);font-size:0}
 #mn{left:11cqw}
+#mchip{position:absolute;left:50%;top:8.8cqw;transform:translateX(-50%);background:#1b1f3dcc;color:#fff;border-radius:3cqw;padding:.6cqw 3cqw;font:700 2.9cqw/1.5 system-ui,Tahoma;white-space:nowrap;z-index:8;pointer-events:none;direction:rtl}
+#mchip[hidden]{display:none}
 #mn::before{content:"•••";font:900 5cqw/1 system-ui;letter-spacing:.3cqw}
 #tt{position:absolute;left:50%;top:44%;transform:translateX(-50%);max-width:80%;background:#10142ee6;color:#fff;border-radius:4cqw;padding:2cqw 5cqw;font:600 4.2cqw/1.4 system-ui,Tahoma;z-index:40;text-align:center;direction:rtl;pointer-events:none;animation:ti .25s}
 @keyframes ti{from{opacity:0;transform:translate(-50%,2cqw)}}
@@ -203,6 +205,7 @@ body.zt,html.zt{background:#1d3b33}
  </svg>
 
  <button class="top" id="mn">menu</button>
+ <div id="mchip" hidden>💀 أول من يخلّص أوراقه يخسر</div>
  <div id="board">
 
  <div class="oh t" id="oh_t"></div><div class="oh t tl" id="oh_tl"></div><div class="oh t tr" id="oh_tr"></div><div class="oh l" id="oh_l"></div><div class="oh r" id="oh_r"></div>
@@ -221,7 +224,7 @@ body.zt,html.zt{background:#1d3b33}
  <div id="flash"></div>
  <div id="cdock"><div id="chatp" hidden><div id="chatl"></div></div><div id="emo2"></div><div id="cbar"><button id="est" aria-label="emoji">😊</button><input id="cin" maxlength="100" placeholder="اكتب رسالتك..." autocomplete="off" enterkeyhint="send"><button id="csd" aria-label="send"><svg viewBox="0 0 24 24"><path d="M3 11.2L20.6 3.4c.8-.3 1.5.4 1.2 1.2L14 22c-.4.9-1.7.8-1.9-.2l-1.4-6.5-6.5-1.4c-1-.2-1.1-1.5-.2-1.9z" transform="rotate(-8 12 12) scale(-1 1) translate(-24 0)"/></svg></button><button id="cbadge" hidden></button></div></div>
  <div id="tt" hidden></div>
- <div id="menu" hidden><button id="snd">🔊 الصوت: شغّال</button><p><b>طريقة اللعب:</b><br>• تسحب ورقة مخفية من اللاعب اللي على يمينك.<br>• لو كوّنت زوج (نفس الرقم ونفس اللون) يترمي تلقائياً.<br>• بعد كل سحبة تنخلط أوراقك.<br>• اللي يخلّص أوراقه يطلع فائز، والباقي معه الزومبي 🧟 هو الخاسر!</p></div>
+ <div id="menu" hidden><button id="snd">🔊 الصوت: شغّال</button><p id="rules"></p></div>
  <div id="end" hidden></div>
  <div id="msg"></div>
 </div>
@@ -299,7 +302,15 @@ function setTheme(z){const was=stage.classList.contains('zt');stage.classList.to
 function commit(s){
   const th0=thNow();st=s;off=s.now-Date.now()/1000;sel=null;locked=false;
   const z=s.hand.includes('Z');setTheme(z);if(thNow()!==th0)faceCacheClear();
-  render()}
+  applyMode();render()}
+const isR=()=>!!st&&st.mode==='first';   // الوضع العكسي: أول من يخلّص أوراقه يخسر
+let modeToast=false;
+function applyMode(){const r=isR();
+  $('mchip').hidden=!r;
+  $('rules').innerHTML='<b>طريقة اللعب:</b><br>• تسحب ورقة مخفية من اللاعب اللي على يمينك.<br>• لو كوّنت زوج (نفس الرقم ونفس اللون) يترمي تلقائياً.<br>• بعد كل سحبة تنخلط أوراقك.<br>'+(r
+    ?'• <b>الوضع العكسي:</b> أول لاعب يخلّص أوراقه يخسر 💀 وتنتهي اللعبة فوراً، واللي معه الزومبي 🧟 هو الفايز!'
+    :'• اللي يخلّص أوراقه يطلع فائز، والباقي معه الزومبي 🧟 هو الخاسر!');
+  if(r&&!modeToast&&st.phase==='play'){modeToast=true;setTimeout(()=>toast('💀 الوضع العكسي: أول من يخلّص أوراقه يخسر، واللي معه الزومبي 🧟 يفوز!',4500),800)}}
 function faceCacheClear(){}
 function render(){
   const s=st,P=s.players,n=P.length,mi=P.findIndex(p=>p.uid===U),mine=s.cur===U&&s.phase==='play',th=thNow();
@@ -336,11 +347,17 @@ function render(){
     if(meOut)t=`🎉 طلعت من اللعبة<br><span style="font-size:4cqw">تفرّج على البقية</span>`;
     else if(mine)t=sel?'اضغط مرة ثانية للسحب':`اختر بطاقة من<b>${vn}</b>`;
     else t=`<span style="font-size:4.4cqw"><b style="display:inline;font-size:4.6cqw">${esc(pname(s.cur))}</b> يسحب من</span><b>${vn}</b>`}
-  else if(s.phase==='over')t=s.loser===U?'🧟 أنت الزومبي!':'🎉 نجوت من الزومبي!';
+  else if(s.phase==='over')t=isR()?(s.winner===U?'🏆 فزت! الزومبي معك':(s.losers||[]).includes(U)?'💀 خلّصت أوراقك… خسرت':'🏁 انتهت اللعبة'):(s.loser===U?'🧟 أنت الزومبي!':'🎉 نجوت من الزومبي!');
   pl.innerHTML=t;
   if(s.phase==='over'&&!endShown){endShown=true;setTimeout(showEnd,first?100:900)}
 }
-function showEnd(){const s=st,lz=s.loser===U,list=[...s.out,s.loser].filter(x=>x!==null&&x!==undefined);
+function showEndR(){const s=st,win=s.winner===U,ls=s.losers||[],los=ls.includes(U);
+  const e=$('end');e.className=thNow()==='z'?'z':'';
+  const rows=`<div class="row lz"><span>🏆 ${esc(pname(s.winner))}${win?' (أنت)':''}</span><span>الفائز</span></div>`+ls.map(u=>`<div class="row"><span>💀 ${esc(pname(u))}${u===U?' (أنت)':''}</span><span>خلّص أوراقه</span></div>`).join('');
+  e.innerHTML=`<div class="box"><h1>${win?'🏆 فزت! الزومبي معك':los?'💀 خسرت! خلّصت أوراقك أولاً':'🏁 انتهت اللعبة'}</h1><div style="font:600 4cqw system-ui,Tahoma;opacity:.8">${esc(pname(s.winner))} معه الزومبي ويفوز</div><div class="zc"><div class="cf cz"><img src="${A('Z')}"></div></div>${rows}<button id="cl">إغلاق</button></div>`;
+  e.hidden=false;$('cl').onclick=()=>{if(tg)tg.close();else e.hidden=true};
+  los?sfx.zom():sfx.free()}
+function showEnd(){if(isR())return showEndR();const s=st,lz=s.loser===U,list=[...s.out,s.loser].filter(x=>x!==null&&x!==undefined);
   const e=$('end');e.className=thNow()==='z'?'z':'';
   e.innerHTML=`<div class="box"><h1>${lz?'🧟 خسرت! الزومبي معك':'🎉 نجوت من الزومبي!'}</h1><div style="font:600 4cqw system-ui,Tahoma;opacity:.8">${esc(pname(s.loser))} هو الزومبي</div><div class="zc"><div class="cf cz"><img src="${A('Z')}"></div></div>${list.map((u,i)=>`<div class="row ${u===s.loser?'lz':''}"><span>${u===s.loser?'🧟':i===0?'🥇':i===1?'🥈':i===2?'🥉':'🏁'} ${esc(pname(u))}${u===U?' (أنت)':''}</span><span>${u===s.loser?'الخاسر':'المركز '+(i+1)}</span></div>`).join('')}<button id="cl">إغلاق</button></div>`;
   e.hidden=false;$('cl').onclick=()=>{if(tg)tg.close();else e.hidden=true};
@@ -419,8 +436,8 @@ async function playDraw(s){
   d.style.height=(sw*dst.h/dst.w)+'px';
   await move(d,{cx:src.cx,cy:src.cy,w:sw,h:sw*dst.h/dst.w},fin,{ms:600,arc:cqw()*9,flip:flipped?180:0,rot1:meDraw?0:0});
   /* الزومبي */
-  if(ev.z&&meDraw){stage.classList.add('shake');$('flash').animate([{opacity:.55},{opacity:0}],{duration:700});sfx.zom();buzz('heavy');toast('🧟 جاك الزومبي!',2200);setTheme(true);await sleep(450);stage.classList.remove('shake')}
-  else if(ev.z&&meVic){sfx.free();toast('🙌 فكّيت من الزومبي!',2000)}
+  if(ev.z&&meDraw){stage.classList.add('shake');$('flash').animate([{opacity:.55},{opacity:0}],{duration:700});sfx.zom();buzz('heavy');toast(isR()?'🧟 جاك الزومبي! لو خلّص غيرك أوراقه تفوز':'🧟 جاك الزومبي!',2200);setTheme(true);await sleep(450);stage.classList.remove('shake')}
+  else if(ev.z&&meVic){if(isR()){sfx.warn();toast('😬 راح منك الزومبي!',2000)}else{sfx.free();toast('🙌 فكّيت من الزومبي!',2000)}}
   /* الزوج */
   if(ev.pair){
     let from2;
@@ -435,7 +452,7 @@ async function playDraw(s){
   commit(s);d.remove();
   if(ev.shuf){if(!ev.pair||meDraw||true){sfx.shuf();if(meDraw)await shuffleMine(old);else await riffle(kT)}}
   /* خلّص أوراقه */
-  (ev.fin||[]).forEach((u,i)=>setTimeout(()=>{toast(u===U?'🎉 خلّصت أوراقك! مبروك':`🏁 ${pname(u)} خلّص أوراقه!`,2000);if(u!==U)sfx.free()},i*1200));
+  (ev.fin||[]).forEach((u,i)=>setTimeout(()=>{if(isR()){toast(u===U?'💀 خلّصت أوراقك… خسرت!':`💀 ${pname(u)} خلّص أوراقه وخسر!`,2200);u===U?sfx.zom():sfx.free()}else{toast(u===U?'🎉 خلّصت أوراقك! مبروك':`🏁 ${pname(u)} خلّص أوراقه!`,2000);if(u!==U)sfx.free()}},i*1200));
   fx.innerHTML=''}
 async function shuffleMine(old){
   const els=[...document.querySelectorAll('#hand .hc')],hr=rel($('hand').getBoundingClientRect()),as=[];
@@ -477,7 +494,7 @@ let DM=null;
 function startDemo(){
   const N=Math.max(2,Math.min(6,+Q.get('n')||4)),names=['أنت','Turfmonster3','s2ana','soniya_69','نورة','أبو سعود'];
   const pk=c=>c.slice(0,-1)+('HD'.includes(c.slice(-1))?'r':'k');
-  const D=DM={players:names.slice(0,N).map((n,i)=>({uid:i+1,name:n})),hands:{},pairs:[],out:[],cur:0,seq:0,ev:null,phase:'play',loser:null,deadline:0,timer:null};
+  const D=DM={players:names.slice(0,N).map((n,i)=>({uid:i+1,name:n})),hands:{},pairs:[],out:[],cur:0,seq:0,ev:null,phase:'play',loser:null,deadline:0,timer:null,mode:Q.get('m')==='f'?'first':'classic',winner:null,losers:[]};
   {const total=RANKS.length*4+1;let caps=[...Array(N)].map((_,i)=>Math.floor(total/N)+(i<total%N?1:0)).sort(()=>Math.random()-.5);
    const hs=[...Array(N)].map(()=>[]),zi=caps.indexOf(Math.max(...caps));hs[zi].push('Z');caps[zi]--;
    const cl={};RANKS.forEach(r=>'SHDC'.split('').forEach(s=>{(cl[pk(r+s)]=cl[pk(r+s)]||[]).push(r+s)}));
@@ -496,7 +513,7 @@ function startDemo(){
   const prevAlive=u=>{const i=D.players.findIndex(p=>p.uid===u);for(let k=1;k<=N;k++){const x=D.players[(i-k+N*4)%N].uid;if(D.hands[x].length)return x}};
   const victim=()=>{const v=prevAlive(D.players[D.cur].uid);return v===D.players[D.cur].uid?null:v};
   const view=()=>({now:Date.now()/1000,phase:D.phase,cur:D.phase==='play'?D.players[D.cur].uid:null,victim:D.phase==='play'?victim():null,deadline:Date.now()/1000+25,turn:25,
-    ev:D.ev&&D.ev.type==='draw'&&![D.ev.to,D.ev.from].includes(1)?{...D.ev,card:null}:D.ev,host:1,loser:D.loser,out:D.out,ranks:RANKS,pairs:D.pairs.slice(-6),npairs:D.pairs.length,
+    ev:D.ev&&D.ev.type==='draw'&&![D.ev.to,D.ev.from].includes(1)?{...D.ev,card:null}:D.ev,host:1,loser:D.loser,out:D.out,mode:D.mode,winner:D.winner,losers:D.losers,ranks:RANKS,pairs:D.pairs.slice(-6),npairs:D.pairs.length,
     players:D.players.map(p=>({uid:p.uid,name:p.name,n:D.hands[p.uid].length})),hand:[...D.hands[1]]});
   D.push=()=>setTimeout(()=>onState(view()),20);
   D.pick=(u,i)=>{const v=victim(),vh=D.hands[v],c=vh.splice(i,1)[0],h=D.hands[u];h.push(c);let pair=null;
@@ -504,7 +521,7 @@ function startDemo(){
     const fin=[];if(!vh.length){D.out.push(v);fin.push(v)}if(!h.length){D.out.push(u);fin.push(u)}
     let shuf=false;if(h.length>1){h.sort(()=>Math.random()-.5);shuf=true}
     D.ev={seq:++D.seq,type:'draw',from:v,to:u,idx:i,card:c,pair,shuf,fin,z:c==='Z'};
-    if(alive().length<=1){D.phase='over';D.loser=alive()[0]}else D.cur=D.players.findIndex(p=>p.uid===nextAlive(u));
+    if(D.mode==='first'?fin.length:alive().length<=1){D.phase='over';if(D.mode==='first'){D.losers=[...D.out];D.loser=D.out[0];D.winner=D.players.find(p=>D.hands[p.uid].includes('Z')).uid}else D.loser=alive()[0]}else D.cur=D.players.findIndex(p=>p.uid===nextAlive(u));
     D.push();D.bot()};
   D.bot=()=>{clearTimeout(D.timer);if(D.phase!=='play'||D.players[D.cur].uid===1)return;D.timer=setTimeout(()=>{const v=victim();D.pick(D.players[D.cur].uid,Math.floor(Math.random()*D.hands[v].length))},3600+Math.random()*1400)};
   D.push();D.bot();
