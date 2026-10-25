@@ -110,7 +110,7 @@ const SP={};for(const k in IMG){const i=new Image();i.src=IMG[k];SP[k]=i}
    • إحداثيات العالم (السيرفر) مركزها منتصف رسمة اللوحة؛ الاتجاهات تُرسل للسيرفر بإحداثيات العالم.
    • رابط الدخول: ?r=الغرفة&u=رقمي&t=التوكن&s=مضيف السيرفر&n=اسمي
    • معاينة التصميم بدون سيرفر: ?demo=1&mode=1v1|2v2&seat=0..3                                     */
-const D=1254,CR=18,SR=36,PR=34,R=160,VM=16,FRIC=.991,WALL_E=.82,HW=359,HH=318;
+const D=1254,CR=18,SR=36,PR=34,R=160,VM=13,FRIC=.991,WALL_E=.82,HW=359,HH=318;
 const PK=[[-331,-301],[331,-301],[-331,301],[331,301]];                        // لازم تطابق carrom_server.py
 const LANE={0:[247,214],1:[270,190],2:[247,214],3:[270,190]};                    // [بُعد الخط عن المركز, نصف طوله]
 const ROT=[[1,0,0,1],[0,-1,1,0],[-1,0,0,-1],[0,1,-1,0]];
@@ -197,6 +197,7 @@ function msgText(m){
   if(m.k==='skip')return `⏱ ${nm(m.who)} تخطّى دوره (${m.miss}/2)`;
   if(m.k==='shot'){
     if(m.foul){const x=m.pen==='k'?'رجعت حبة سوداء للمنتصف':m.pen==='w'?'رجعت حبة بيضاء للمنتصف':m.pen==='debt'?'عليه دين حبة، أول حبة يدخلها ترجع':'';return 'فاول! '+(x||'تنتقل الدورة')}
+    if(m.lastq)return 'الزرقاء أولاً — رجعت الحبة للمنتصف';
     if(m.cov==='fail')return 'ما غطّى الزرقاء — رجعت للمنتصف';
     if(m.rep)return 'سدّد دينه — رجعت الحبة للمنتصف';
     if(m.cov==='pend'||m.cov==='ok+pend')return 'الزرقاء معلّقة — لازم تدخل حبة ثانية بعدها (بيضاء أو سوداء)';
@@ -325,15 +326,17 @@ function draw(){
   drawSprite(S)}
 function frame(t){
   const dt=Math.min(.1,(t-t0)/1000||0);t0=t;
-  if(anim){anim.acc+=dt;let n=0;while(anim.acc>=1/60&&anim.f<anim.frames&&n<8){for(let i=0;i<4;i++)subStep(anim.bodies,[]);anim.f++;anim.acc-=1/60;n++}if(anim.f>=anim.frames)finishAnim()}
+  if(anim){anim.acc+=dt;let n=0;while(anim.acc>=1/(60*PLAY)&&anim.f<anim.frames&&n<8){for(let i=0;i<4;i++)subStep(anim.bodies,[]);anim.f++;anim.acc-=1/(60*PLAY);n++}if(anim.f>=anim.frames)finishAnim()}
   if(ST){tick();const S=strikerW(),b=!!(S&&ST.cur===myIdx&&blockedAt(S.x,S.y));if(b!==!!frame.bad){frame.bad=b;ui()}if(msg&&Date.now()>=msgUntil&&frame.hadMsg){frame.hadMsg=false;ui()}frame.hadMsg=Date.now()<msgUntil}
   draw();requestAnimationFrame(frame)}
 
 // ---------- اللمس ----------
 function viewPt(e){const r=$('stage').getBoundingClientRect(),X=(e.clientX-r.left)/u,Y=(e.clientY-r.top)/u;return[(X-cxB)/B,(Y-cyB)/B]}
 const canAim=()=>myTurn()&&!waiting&&!paused&&!anim;
-let dragS=null,lastAimSend=0;const DEAD=30;   // منطقة الإلغاء: إذا رجّعت السحب لقرب المهاجم (أقل من هالمسافة) ما ينضرب
-const aimOn=()=>!!(aimP&&aimP.raw>DEAD);
+let dragS=null,lastAimSend=0;const PLAY=1.1,FWD_MIN=.1,DEAD=30;   // PLAY سرعة عرض الحركة (لازم تطابق السيرفر)
+const fwdOK=a=>{const [,,c,dd]=ROT[curSeat()];return a.dx*(-c)+a.dy*(-dd)>=FWD_MIN};   // الضرب للأمام فقط
+   // منطقة الإلغاء: إذا رجّعت السحب لقرب المهاجم (أقل من هالمسافة) ما ينضرب
+const aimOn=()=>!!(aimP&&aimP.raw>DEAD&&fwdOK(aimP));
 function sendAim(force){const n=Date.now();if(!force&&n-lastAimSend<90)return;lastAimSend=n;
   send({a:'aim',l:myL,dx:aimOn()?aimP.dx:0,dy:aimOn()?aimP.dy:0,p:aimOn()?aimP.p:0})}
 function mv(e){const S=strikerW();if(!S)return;const [vx,vy]=viewPt(e),[wx,wy]=v2w(vx,vy);
@@ -345,7 +348,7 @@ cv.addEventListener('pointercancel',()=>{if(!drag)return;drag=null;dragS=null;ai
 cv.addEventListener('pointerup',()=>{if(!drag)return;drag=null;dragS=null;const S=strikerW();
   if(!S||blockedAt(S.x,S.y)){aimP=null;sendAim(true);return}
   if(aimOn()&&aimP.p>.04){waiting=true;const sh={a:'shoot',l:myL,dx:aimP.dx,dy:aimP.dy,p:aimP.p};aimP=null;if(DEMO)locShoot(myIdx,sh);else send(sh)}
-  else{aimP=null;sendAim(true)}ui()});
+  else{if(aimP&&aimP.raw>DEAD&&!fwdOK(aimP))say('اضرب للأمام فقط',1800);aimP=null;sendAim(true)}ui()});
 const sl=$('slide');
 function bm(e){if(!canAim())return;const r=sl.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*610,k=Math.min(1,Math.max(0,(px-135)/335)),half=LANE[mySeat][1];
   myL=-half+2*half*k;ui();sendAim()}
@@ -406,6 +409,7 @@ function locShoot(i,m){
   const s=LOC.s;if(!s||s.phase!=='aim'||i!==s.cur)return;
   let dx=m.dx,dy=m.dy;const n=Math.hypot(dx,dy);if(!n){waiting=false;ui();return}dx/=n;dy/=n;
   const pw=Math.max(.1,Math.min(1,m.p)),p=s.players[i],team=p.team,half=LANE[p.seat][1];
+  {const [,,c,dd]=ROT[p.seat];if(dx*(-c)+dy*(-dd)<FWD_MIN){waiting=false;say('اضرب للأمام فقط',1800);ui();return}}
   const [sx,sy]=laneW(p.seat,Math.max(-half,Math.min(half,m.l||0)));
   if(s.coins.some(c=>Math.hypot(c[2]-sx,c[3]-sy)<SR+CR-1)){waiting=false;say('الموضع محجوز',2200);ui();return}
   const vx=dx*pw*VM,vy=dy*pw*VM;
@@ -416,10 +420,12 @@ function locShoot(i,m){
   while(frames<900){for(let k=0;k<4;k++)subStep(bodies,pocketed);frames++;if(!bodies.some(b=>b[2]*b[2]+b[3]*b[3]>.0016))break}
   s.coins=bodies.filter(b=>b[5]!=='s').map(b=>[b[6],b[5],b[0],b[1]]);
   const foul=pocketed.some(o=>o[1]==='s'),got=pocketed.filter(o=>o[1]!=='s');
-  const back=[],carried=s.pending;let pend=s.pending,pts=0,scored=false,cov=null,repN=0,pen=null;
+  const back=[],carried=s.pending;let pend=s.pending,pts=0,scored=false,cov=null,repN=0,pen=null,qIn=false,lastq=false;
+  const last2=!carried&&before.length===2&&before.some(c=>COVER.includes(c[1]))&&before.some(c=>!COVER.includes(c[1]));
   for(const[cid,t]of got){
     if(s.debt[team]>0){s.debt[team]--;repN++;back.push([cid,t]);continue}      // أول حبة تسدّد الدين
-    if(COVER.includes(t)){
+    if(last2&&!COVER.includes(t)&&!qIn){back.push([cid,t]);lastq=true;continue}   // آخر شي: الزرقاء أول
+    if(COVER.includes(t)){qIn=true;
       if(pend){s.won[team].push(pend);pts+=VAL[pend[1]];cov='ok'}
       pend=[cid,t];cov=cov!=='ok'?'pend':'ok+pend'}
     else{s.won[team].push([cid,t]);pts+=VAL[t];scored=true;
@@ -431,26 +437,27 @@ function locShoot(i,m){
       if(ix>=0){const hit=s.won[team].splice(ix,1)[0];pts-=VAL[w];back.push(hit);pen=w;done=true;break}}
     if(!done){s.debt[team]++;pen='debt'}
   }else if(pend&&carried&&pend[0]===carried[0]){back.push(pend);pend=null;cov='fail'}
-  if(!s.coins.length&&pend){back.push(pend);pend=null;cov='fail'}
+  if(!s.coins.length&&!back.length&&pend){back.push(pend);pend=null;cov='fail'}
   s.pending=pend;if(back.length)locPutBack(s,back);
   s.score[team]+=pts;
   const keep=(scored||!!pend||cov==='ok')&&!foul;
   s.seq++;
-  const ev={by:i,got:got.map(o=>o[1]),pts,foul,pen,rep:repN,cov};s.msg=Object.assign({k:'shot'},ev);
+  const ev={by:i,got:got.map(o=>o[1]),pts,foul,pen,rep:repN,cov,lastq};s.msg=Object.assign({k:'shot'},ev);
   onShot({t:'shot',seq:s.seq,from:before,st:[sx,sy,vx,vy],frames,ev,score:s.score.slice()});
   setTimeout(()=>{
     if(s.score[team]>=s.goal){s.phase='over';s.winner=team;s.reason='score'}
     else if(!s.coins.length){s.phase='over';s.winner=s.score[0]>=s.score[1]?0:1;s.reason='coins'}
     else{if(!keep){if(s.pending){locPutBack(s,[s.pending]);s.pending=null}s.cur=(s.cur+1)%s.players.length}
       s.l=0;s.aim=null;s.phase='aim'}
-    onState(locSnap());locBot()},frames/60*1000+700)}
+    onState(locSnap());locBot()},frames/(60*PLAY)*1000+700)}
 function locBot(){
   const s=LOC.s;if(!s||s.phase!=='aim'||s.cur===myIdx)return;
   setTimeout(()=>{if(s.phase!=='aim'||s.cur===myIdx)return;
     const seat=s.players[s.cur].seat,half=LANE[seat][1];let sx,sy,l,t=0;
     do{l=(Math.random()*2-1)*half;[sx,sy]=laneW(seat,l)}while(s.coins.some(c=>Math.hypot(c[2]-sx,c[3]-sy)<SR+CR-1)&&++t<50);
-    const c=s.coins[Math.floor(Math.random()*s.coins.length)];
-    locShoot(s.cur,{l,dx:c[2]-sx,dy:c[3]-sy,p:.55+Math.random()*.45})},1500)}
+    const c=s.coins[Math.floor(Math.random()*s.coins.length)],[,,fc,fd]=ROT[seat];let ddx=c[2]-sx,ddy=c[3]-sy;const nn=Math.hypot(ddx,ddy)||1;
+    if((ddx*(-fc)+ddy*(-fd))/nn<.2){ddx=-sx;ddy=-sy}   // لو الحبة جنب/خلف يصوّب للمركز
+    locShoot(s.cur,{l,dx:ddx,dy:ddy,p:.5+Math.random()*.4})},1500)}
 function demoState(){
   const mode=(q.get('mode')||'1v1')==='2v2'?'2v2':'1v1',seat=+(q.get('seat')||0)%4,names=['Saud','L7N','rezil333','Fahad'];
   const seats=mode==='2v2'?[0,1,2,3]:[0,2],players=seats.map((s,i)=>({uid:0,name:names[i],seat:s,team:i%2,miss:0}));
