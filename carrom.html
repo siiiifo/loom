@@ -110,7 +110,7 @@ const SP={};for(const k in IMG){const i=new Image();i.src=IMG[k];SP[k]=i}
    • إحداثيات العالم (السيرفر) مركزها منتصف رسمة اللوحة؛ الاتجاهات تُرسل للسيرفر بإحداثيات العالم.
    • رابط الدخول: ?r=الغرفة&u=رقمي&t=التوكن&s=مضيف السيرفر&n=اسمي
    • معاينة التصميم بدون سيرفر: ?demo=1&mode=1v1|2v2&seat=0..3                                     */
-const D=1254,CR=18,SR=36,PR=34,R=160,VM=9.5,FRIC=.991,WALL_E=.82,HW=359,HH=318;
+const D=1254,CR=18,SR=36,PR=34,R=160,VM=16,FRIC=.991,WALL_E=.82,HW=359,HH=318;
 const PK=[[-331,-301],[331,-301],[-331,301],[331,301]];                        // لازم تطابق carrom_server.py
 const LANE={0:[247,214],1:[270,190],2:[247,214],3:[270,190]};                    // [بُعد الخط عن المركز, نصف طوله]
 const ROT=[[1,0,0,1],[0,-1,1,0],[-1,0,0,-1],[0,1,-1,0]];
@@ -195,7 +195,11 @@ function onState(s){
 }
 function msgText(m){
   if(m.k==='skip')return `⏱ ${nm(m.who)} تخطّى دوره (${m.miss}/2)`;
-  if(m.k==='shot'){if(m.foul)return 'فاول! تنتقل الدورة';
+  if(m.k==='shot'){
+    if(m.foul){const x=m.pen==='k'?'رجعت حبة سوداء للمنتصف':m.pen==='w'?'رجعت حبة بيضاء للمنتصف':m.pen==='debt'?'عليه دين حبة، أول حبة يدخلها ترجع':'';return 'فاول! '+(x||'تنتقل الدورة')}
+    if(m.cov==='fail')return 'ما غطّى الزرقاء — رجعت للمنتصف';
+    if(m.rep)return 'سدّد دينه — رجعت الحبة للمنتصف';
+    if(m.cov==='pend'||m.cov==='ok+pend')return 'الزرقاء معلّقة — لازم تدخل حبة ثانية بعدها (بيضاء أو سوداء)';
     if(m.got&&m.got.length)return m.by===myIdx?'أحسنت! كمّل':`${nm(m.by)} سجّل ${m.pts}`}
   return ''}
 function onShot(p){
@@ -304,8 +308,8 @@ function drawSprite(o){const im=SP[o.t];if(!im||!im.complete)return;cx.save();cx
     cx.shadowColor='#ff2020';cx.shadowBlur=22;cx.drawImage(TC,o.x-s/2,o.y-s/2,s,s)}
   else cx.drawImage(im,o.x-s/2,o.y-s/2,s,s);cx.restore()}
 function arrowOf(S,a){
-  cx.save();cx.setLineDash([9,9]);cx.strokeStyle='rgba(255,255,255,.85)';cx.lineWidth=2.2;cx.beginPath();cx.moveTo(S.x,S.y);cx.lineTo(S.x-a.dx*a.p*R,S.y-a.dy*a.p*R);cx.stroke();cx.restore();
-  const len=70+a.p*150,ex=S.x+a.dx*len,ey=S.y+a.dy*len,ang=Math.atan2(a.dy,a.dx);
+  cx.save();cx.setLineDash([9,9]);cx.strokeStyle='rgba(255,255,255,.85)';cx.lineWidth=2.2;cx.beginPath();cx.moveTo(S.x,S.y);const pl=a.p>0?DEAD+a.p*(R-DEAD):0;cx.lineTo(S.x-a.dx*pl,S.y-a.dy*pl);cx.stroke();cx.restore();
+  const len=SR+10+a.p*190,ex=S.x+a.dx*len,ey=S.y+a.dy*len,ang=Math.atan2(a.dy,a.dx);
   cx.strokeStyle=cx.fillStyle=S.bad?'#ff4d4d':'#fff';cx.lineCap='round';cx.lineWidth=7;cx.beginPath();cx.moveTo(S.x+a.dx*SR,S.y+a.dy*SR);cx.lineTo(ex,ey);cx.stroke();
   cx.beginPath();cx.moveTo(ex+a.dx*26,ey+a.dy*26);cx.lineTo(ex+Math.cos(ang+2.6)*22,ey+Math.sin(ang+2.6)*22);cx.lineTo(ex+Math.cos(ang-2.6)*22,ey+Math.sin(ang-2.6)*22);cx.fill()}
 function draw(){
@@ -316,7 +320,7 @@ function draw(){
   for(const cn of coinsView)drawSprite({t:cn[1],x:cn[2],y:cn[3]});
   const S=strikerW();if(!S)return;
   const mine=ST.cur===myIdx&&!over;S.bad=mine&&blockedAt(S.x,S.y);
-  if(mine){if(drag&&!waiting&&!paused&&aimP&&aimP.raw>6)arrowOf(S,aimP)}          // السهم يظهر فقط أثناء سحب اللاعب
+  if(mine){if(drag&&!waiting&&!paused&&aimOn())arrowOf(S,aimP)}          // السهم يظهر فقط أثناء سحب اللاعب
   else if(oppAim&&oppAim.p>.02)arrowOf(S,oppAim);                                // وعند الخصم: فقط وهو يسحب
   drawSprite(S)}
 function frame(t){
@@ -328,17 +332,19 @@ function frame(t){
 // ---------- اللمس ----------
 function viewPt(e){const r=$('stage').getBoundingClientRect(),X=(e.clientX-r.left)/u,Y=(e.clientY-r.top)/u;return[(X-cxB)/B,(Y-cyB)/B]}
 const canAim=()=>myTurn()&&!waiting&&!paused&&!anim;
-let lastAimSend=0;
+let dragS=null,lastAimSend=0;const DEAD=30;   // منطقة الإلغاء: إذا رجّعت السحب لقرب المهاجم (أقل من هالمسافة) ما ينضرب
+const aimOn=()=>!!(aimP&&aimP.raw>DEAD);
 function sendAim(force){const n=Date.now();if(!force&&n-lastAimSend<90)return;lastAimSend=n;
-  send({a:'aim',l:myL,dx:aimP?aimP.dx:0,dy:aimP?aimP.dy:0,p:aimP?aimP.p:0})}
+  send({a:'aim',l:myL,dx:aimOn()?aimP.dx:0,dy:aimOn()?aimP.dy:0,p:aimOn()?aimP.p:0})}
 function mv(e){const S=strikerW();if(!S)return;const [vx,vy]=viewPt(e),[wx,wy]=v2w(vx,vy);
-  const ex=S.x-wx,ey=S.y-wy,l=Math.hypot(ex,ey)||1,qq=Math.min(l,R);aimP={dx:ex/l,dy:ey/l,p:qq/R,raw:l};sendAim()}
-cv.addEventListener('pointerdown',e=>{e.preventDefault();if(!canAim())return;drag=1;cv.setPointerCapture(e.pointerId);mv(e);ui()});
+  if(!dragS)dragS=[wx,wy];   // نقطة بداية اللمس: القوة تُحسب من مسافة سحب الإصبع عنها، مو من المهاجم
+  const ex=dragS[0]-wx,ey=dragS[1]-wy,l=Math.hypot(ex,ey)||1;aimP={dx:ex/l,dy:ey/l,p:Math.max(0,Math.min(1,(l-DEAD)/(R-DEAD))),raw:l};sendAim()}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(!canAim())return;drag=1;dragS=null;cv.setPointerCapture(e.pointerId);mv(e);ui()});
 cv.addEventListener('pointermove',e=>{if(drag)mv(e)});
-cv.addEventListener('pointercancel',()=>{if(!drag)return;drag=null;aimP=null;sendAim(true);ui()});
-cv.addEventListener('pointerup',()=>{if(!drag)return;drag=null;const S=strikerW();
+cv.addEventListener('pointercancel',()=>{if(!drag)return;drag=null;dragS=null;aimP=null;sendAim(true);ui()});
+cv.addEventListener('pointerup',()=>{if(!drag)return;drag=null;dragS=null;const S=strikerW();
   if(!S||blockedAt(S.x,S.y)){aimP=null;sendAim(true);return}
-  if(aimP&&aimP.raw>20&&aimP.p>.1){waiting=true;send({a:'shoot',l:myL,dx:aimP.dx,dy:aimP.dy,p:aimP.p});aimP=null;if(DEMO)setTimeout(()=>{waiting=false;ui()},600)}
+  if(aimOn()&&aimP.p>.04){waiting=true;const sh={a:'shoot',l:myL,dx:aimP.dx,dy:aimP.dy,p:aimP.p};aimP=null;if(DEMO)locShoot(myIdx,sh);else send(sh)}
   else{aimP=null;sendAim(true)}ui()});
 const sl=$('slide');
 function bm(e){if(!canAim())return;const r=sl.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*610,k=Math.min(1,Math.max(0,(px-135)/335)),half=LANE[mySeat][1];
@@ -383,6 +389,68 @@ const chatRecv=(()=>{const P=$('chatp'),L=$('chatl'),B=$('cbadge'),CI=$('cin'),s
   CI.addEventListener('focus',()=>{adj();[80,300,600].forEach(t=>setTimeout(adj,t))});CI.addEventListener('blur',()=>{adj();setTimeout(adj,300)})})();
 
 // ---------- معاينة التصميم بدون سيرفر ----------
+
+// ---------- وضع التجربة المحلي (بدون سيرفر): نفس قواعد carrom_server.py، الخصم بوت عشوائي ----------
+const VAL={k:10,w:20,q:50},COVER=['q'];          // لازم تطابق السيرفر
+const LOC={s:null};
+function locSnap(){const s=LOC.s,o=JSON.parse(JSON.stringify(s));o.now=Date.now()/1000;o.deadline=0;return o}
+function locFree(coins,extra){
+  const obs=coins.map(c=>[c[2],c[3]]).concat(extra),need=2*CR+1;
+  const ok=(x,y)=>obs.every(o=>(x-o[0])**2+(y-o[1])**2>=need*need);
+  if(ok(0,0))return[0,0];
+  for(let ring=1;ring<12;ring++){const rad=ring*(need+1),n=Math.max(6,Math.floor(2*Math.PI*rad/(need+1)));
+    for(let k=0;k<n;k++){const a=2*Math.PI*k/n,x=rad*Math.cos(a),y=rad*Math.sin(a);if(ok(x,y))return[x,y]}}
+  return[0,0]}
+function locPutBack(s,items){const extra=[];for(const[id,t]of items){const[x,y]=locFree(s.coins,extra);extra.push([x,y]);s.coins.push([id,t,x,y])}}
+function locShoot(i,m){
+  const s=LOC.s;if(!s||s.phase!=='aim'||i!==s.cur)return;
+  let dx=m.dx,dy=m.dy;const n=Math.hypot(dx,dy);if(!n){waiting=false;ui();return}dx/=n;dy/=n;
+  const pw=Math.max(.1,Math.min(1,m.p)),p=s.players[i],team=p.team,half=LANE[p.seat][1];
+  const [sx,sy]=laneW(p.seat,Math.max(-half,Math.min(half,m.l||0)));
+  if(s.coins.some(c=>Math.hypot(c[2]-sx,c[3]-sy)<SR+CR-1)){waiting=false;say('الموضع محجوز',2200);ui();return}
+  const vx=dx*pw*VM,vy=dy*pw*VM;
+  s.phase='move';s.msg=null;s.first=false;
+  const before=s.coins.map(c=>c.slice());
+  const bodies=s.coins.map(c=>[c[2],c[3],0,0,CR,c[1],c[0]]);bodies.push([sx,sy,vx,vy,SR,'s',-1]);
+  const pocketed=[];let frames=0;
+  while(frames<900){for(let k=0;k<4;k++)subStep(bodies,pocketed);frames++;if(!bodies.some(b=>b[2]*b[2]+b[3]*b[3]>.0016))break}
+  s.coins=bodies.filter(b=>b[5]!=='s').map(b=>[b[6],b[5],b[0],b[1]]);
+  const foul=pocketed.some(o=>o[1]==='s'),got=pocketed.filter(o=>o[1]!=='s');
+  const back=[],carried=s.pending;let pend=s.pending,pts=0,scored=false,cov=null,repN=0,pen=null;
+  for(const[cid,t]of got){
+    if(s.debt[team]>0){s.debt[team]--;repN++;back.push([cid,t]);continue}      // أول حبة تسدّد الدين
+    if(COVER.includes(t)){
+      if(pend){s.won[team].push(pend);pts+=VAL[pend[1]];cov='ok'}
+      pend=[cid,t];cov=cov!=='ok'?'pend':'ok+pend'}
+    else{s.won[team].push([cid,t]);pts+=VAL[t];scored=true;
+      if(pend){s.won[team].push(pend);pts+=VAL[pend[1]];pend=null;cov='ok'}}}
+  if(foul){
+    if(pend){back.push(pend);pend=null;cov='fail'}
+    let done=false;
+    for(const w of['k','w']){const ix=s.won[team].findIndex(c=>c[1]===w);
+      if(ix>=0){const hit=s.won[team].splice(ix,1)[0];pts-=VAL[w];back.push(hit);pen=w;done=true;break}}
+    if(!done){s.debt[team]++;pen='debt'}
+  }else if(pend&&carried&&pend[0]===carried[0]){back.push(pend);pend=null;cov='fail'}
+  if(!s.coins.length&&pend){back.push(pend);pend=null;cov='fail'}
+  s.pending=pend;if(back.length)locPutBack(s,back);
+  s.score[team]+=pts;
+  const keep=(scored||!!pend||cov==='ok')&&!foul;
+  s.seq++;
+  const ev={by:i,got:got.map(o=>o[1]),pts,foul,pen,rep:repN,cov};s.msg=Object.assign({k:'shot'},ev);
+  onShot({t:'shot',seq:s.seq,from:before,st:[sx,sy,vx,vy],frames,ev,score:s.score.slice()});
+  setTimeout(()=>{
+    if(s.score[team]>=s.goal){s.phase='over';s.winner=team;s.reason='score'}
+    else if(!s.coins.length){s.phase='over';s.winner=s.score[0]>=s.score[1]?0:1;s.reason='coins'}
+    else{if(!keep){if(s.pending){locPutBack(s,[s.pending]);s.pending=null}s.cur=(s.cur+1)%s.players.length}
+      s.l=0;s.aim=null;s.phase='aim'}
+    onState(locSnap());locBot()},frames/60*1000+700)}
+function locBot(){
+  const s=LOC.s;if(!s||s.phase!=='aim'||s.cur===myIdx)return;
+  setTimeout(()=>{if(s.phase!=='aim'||s.cur===myIdx)return;
+    const seat=s.players[s.cur].seat,half=LANE[seat][1];let sx,sy,l,t=0;
+    do{l=(Math.random()*2-1)*half;[sx,sy]=laneW(seat,l)}while(s.coins.some(c=>Math.hypot(c[2]-sx,c[3]-sy)<SR+CR-1)&&++t<50);
+    const c=s.coins[Math.floor(Math.random()*s.coins.length)];
+    locShoot(s.cur,{l,dx:c[2]-sx,dy:c[3]-sy,p:.55+Math.random()*.45})},1500)}
 function demoState(){
   const mode=(q.get('mode')||'1v1')==='2v2'?'2v2':'1v1',seat=+(q.get('seat')||0)%4,names=['Saud','L7N','rezil333','Fahad'];
   const seats=mode==='2v2'?[0,1,2,3]:[0,2],players=seats.map((s,i)=>({uid:0,name:names[i],seat:s,team:i%2,miss:0}));
@@ -395,7 +463,7 @@ addEventListener('resize',()=>{if(document.activeElement===$('cin'))return;layou
 $('cin').addEventListener('blur',()=>setTimeout(layout,150));
 let seen=0;try{seen=localStorage.getItem('carrom_tut')}catch(e){}
 layout();requestAnimationFrame(frame);
-if(DEMO)onState(demoState());else connect();
+if(DEMO){LOC.s=Object.assign(demoState(),{won:[[],[]],debt:[0,0],pending:null,deadline:0});onState(locSnap());locBot()}else connect();
 // ---------- تثبيت الشاشة: لا سحب ولا تمرير ولا تكبير ----------
 try{Telegram.WebApp.disableVerticalSwipes()}catch(e){}          // يمنع تيليجرام يقفل/ينزّل اللعبة لما تسحب لتحت
 document.addEventListener('touchmove',e=>{if(!(e.target.closest&&e.target.closest('#chatl')))e.preventDefault()},{passive:false});
