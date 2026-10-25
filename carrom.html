@@ -110,7 +110,7 @@ const SP={};for(const k in IMG){const i=new Image();i.src=IMG[k];SP[k]=i}
    • إحداثيات العالم (السيرفر) مركزها منتصف رسمة اللوحة؛ الاتجاهات تُرسل للسيرفر بإحداثيات العالم.
    • رابط الدخول: ?r=الغرفة&u=رقمي&t=التوكن&s=مضيف السيرفر&n=اسمي
    • معاينة التصميم بدون سيرفر: ?demo=1&mode=1v1|2v2&seat=0..3                                     */
-const D=1254,CR=18,SR=36,PR=34,R=160,VM=13,FRIC=.991,WALL_E=.82,HW=359,HH=318;
+const D=1254,CR=18,SR=36,PR=34,R=160,VM=6,DEC_C=.01458,DEC_S=.007,WALL_E=.82,HW=359,HH=318;
 const PK=[[-331,-301],[331,-301],[-331,301],[331,301]];                        // لازم تطابق carrom_server.py
 const LANE={0:[247,214],1:[270,190],2:[247,214],3:[270,190]};                    // [بُعد الخط عن المركز, نصف طوله]
 const ROT=[[1,0,0,1],[0,-1,1,0],[-1,0,0,-1],[0,1,-1,0]];
@@ -135,7 +135,7 @@ function nm(i){return (ST&&ST.players[i])?ST.players[i].name:''}
 // ---------- محاكاة مطابقة للسيرفر (نفس ترتيب العمليات بالضبط) ----------
 function subStep(bodies,out){
   const n=bodies.length,pk=new Array(n).fill(false),lim=PR-4;
-  for(let i=0;i<n;i++){const o=bodies[i];o[0]+=o[2];o[1]+=o[3];o[2]*=FRIC;o[3]*=FRIC;
+  for(let i=0;i<n;i++){const o=bodies[i];o[0]+=o[2];o[1]+=o[3];const dec=o[5]==='s'?DEC_S:DEC_C,sp=Math.sqrt(o[2]*o[2]+o[3]*o[3]);if(sp<=dec){o[2]=0;o[3]=0}else{const k=(sp-dec)/sp;o[2]*=k;o[3]*=k}
     for(const p of PK){const dx=o[0]-p[0],dy=o[1]-p[1];if(Math.sqrt(dx*dx+dy*dy)<lim){pk[i]=true;break}}
     if(pk[i])continue;const r=o[4];
     if(o[0]<-HW+r){o[0]=-HW+r;o[2]=Math.abs(o[2])*WALL_E}
@@ -412,7 +412,7 @@ function locShoot(i,m){
   {const [,,c,dd]=ROT[p.seat];if(dx*(-c)+dy*(-dd)<FWD_MIN){waiting=false;say('اضرب للأمام فقط',1800);ui();return}}
   const [sx,sy]=laneW(p.seat,Math.max(-half,Math.min(half,m.l||0)));
   if(s.coins.some(c=>Math.hypot(c[2]-sx,c[3]-sy)<SR+CR-1)){waiting=false;say('الموضع محجوز',2200);ui();return}
-  const vx=dx*pw*VM,vy=dy*pw*VM;
+  const sq=Math.sqrt(pw),vx=dx*sq*VM,vy=dy*sq*VM;
   s.phase='move';s.msg=null;s.first=false;
   const before=s.coins.map(c=>c.slice());
   const bodies=s.coins.map(c=>[c[2],c[3],0,0,CR,c[1],c[0]]);bodies.push([sx,sy,vx,vy,SR,'s',-1]);
