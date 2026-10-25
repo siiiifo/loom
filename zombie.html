@@ -40,6 +40,9 @@ body.zt,html.zt{background:#1d3b33}
 #stage.zt .bk{background:linear-gradient(160deg,#23483f,#183029);border-color:#e4efe9}
 #stage.zt .bk i{display:none}#stage.zt .bk .rt{display:block}
 .oh.t{z-index:7}.oh.t .bk{width:12.6cqw;height:17.5cqw}
+#stage.n5 .oh.t .bk,#stage.n6 .oh.t .bk{width:9.8cqw;height:13.6cqw;border-width:.7cqw}
+#stage.n5 .oh.t .bk i,#stage.n6 .oh.t .bk i{font-size:3.6cqw}#stage.n5 .oh.t .bk .rt,#stage.n6 .oh.t .bk .rt{font-size:2.9cqw}
+.oh.vic{z-index:9}
 .oh.l .bk,.oh.r .bk{width:17cqw;height:11.6cqw}
 .oh.l .bk,.oh.r .bk{justify-content:center}.oh.l .bk{padding-left:5.6cqw}.oh.r .bk{padding-right:5.6cqw}.oh.l .bk .rt,.oh.r .bk .rt{font-size:3.4cqw}.oh.l .bk i,.oh.r .bk i{font-size:4cqw}
 .oh{position:absolute;inset:0;pointer-events:none;z-index:3}
@@ -53,6 +56,12 @@ body.zt,html.zt{background:#1d3b33}
 .seat.l .nm{position:absolute;left:105%;top:50%;transform:translateY(-50%)}
 .seat.r .nm{position:absolute;right:105%;top:50%;transform:translateY(-50%)}
 .seat.l .nm,.seat.r .nm{white-space:nowrap}
+#stage.n5 .seat.t,#stage.n6 .seat.t{top:12.4%;gap:1.1cqw}
+#stage.n5 .seat .av,#stage.n6 .seat .av{width:10.6cqw;height:10.6cqw}
+#stage.n5 .seat .nm,#stage.n6 .seat .nm{font-size:2.7cqw}
+#stage.n5 .seat.t .nm span{max-width:26cqw}#stage.n6 .seat.t .nm span{max-width:21cqw}
+#stage.n5 .seat .tmr,#stage.n6 .seat .tmr{width:13cqw}
+#stage.n5 .seat .dbg,#stage.n6 .seat .dbg{width:5cqw;height:5cqw;font-size:3cqw;line-height:5cqw}
 .av{position:relative;width:12cqw;height:12cqw;border-radius:50%;border:.9cqw solid var(--rc,#6ac7ee);background:#26295f;overflow:hidden;box-shadow:0 .5cqw 1.5cqw #0004;transition:box-shadow .3s}
 .av svg,.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .avw{position:relative}
@@ -196,8 +205,8 @@ body.zt,html.zt{background:#1d3b33}
  <button class="top" id="mn">menu</button>
  <div id="board">
 
- <div class="oh t" id="oh_t"></div><div class="oh l" id="oh_l"></div><div class="oh r" id="oh_r"></div>
- <div class="seat t" id="seat_t"></div><div class="seat l" id="seat_l"></div><div class="seat r" id="seat_r"></div>
+ <div class="oh t" id="oh_t"></div><div class="oh t tl" id="oh_tl"></div><div class="oh t tr" id="oh_tr"></div><div class="oh l" id="oh_l"></div><div class="oh r" id="oh_r"></div>
+ <div class="seat t" id="seat_t"></div><div class="seat t tl" id="seat_tl"></div><div class="seat t tr" id="seat_tr"></div><div class="seat l" id="seat_l"></div><div class="seat r" id="seat_r"></div>
 
  <div id="pile"></div>
  <i class="ray" style="left:30%;top:30%;transform:rotate(35deg)"></i><i class="ray" style="left:26%;top:35%;transform:rotate(-2deg)"></i><i class="ray" style="left:30%;top:40%;transform:rotate(-35deg)"></i>
@@ -226,7 +235,7 @@ const $=id=>document.getElementById(id),stage=$('stage'),fx=$('fx');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const tg=window.Telegram&&Telegram.WebApp;if(tg){try{tg.ready();tg.expand();tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),rnd=(a,b)=>a+Math.random()*(b-a);
-const RING=['#6ac7ee','#e58bd9','#7fd66a','#9a8cf5'],GLOW=['#7fdcff','#ffa8f2','#a8ff94','#c5b8ff'];
+const RING=['#6ac7ee','#e58bd9','#7fd66a','#9a8cf5','#f3b568','#6fe3c9'],GLOW=['#7fdcff','#ffa8f2','#a8ff94','#c5b8ff','#ffd59a','#9affea'];
 /* ===== sound ===== */
 let mute=false,ac;
 function tone(f,d=.08,v=.14,type='triangle',f2){if(mute)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(t+d);}catch(e){}}
@@ -269,8 +278,13 @@ function conn(){
 const sr=()=>stage.getBoundingClientRect();
 function rel(r){const s=sr();return{x:r.left-s.left,y:r.top-s.top,w:r.width,h:r.height,cx:r.left-s.left+r.width/2,cy:r.top-s.top+r.height/2}}
 const cqw=()=>sr().width/100;
+/* مقاعد الخصوم مع عقارب الساعة بدءاً من يسارك: l (يسار) ← tl/t/tr (أعلى) ← r (يمين) */
+const SEATS={2:['t'],3:['l','r'],4:['l','t','r'],5:['l','tl','tr','r'],6:['l','tl','t','tr','r']};
+const isTop=k=>k==='t'||k==='tl'||k==='tr';
+const topX=(k,n)=>n===5?(k==='tl'?29:71):n===6?(k==='tl'?19:k==='tr'?81:50):50;   // موضع المقعد العلوي أفقياً (%)
+const tw=()=>(st&&st.players.length>=5)?9.8:12.6;                                   // عرض ظهر الورقة بالصف العلوي (cqw)
 function seatKey(uid){const P=st.players,n=P.length,mi=P.findIndex(p=>p.uid===U),k=(P.findIndex(p=>p.uid===uid)-mi+n)%n;
-  if(!k)return'me';return n===2?'t':n===3?(k===1?'l':'r'):['l','t','r'][k-1]}
+  if(!k)return'me';return(SEATS[n]||SEATS[6])[k-1]}
 const pname=uid=>{const p=st.players.find(p=>p.uid===uid);return p?p.name:'؟'};
 function handCenter(k){ // مركز يد اللاعب بالإحداثيات النسبية للمسرح
   if(k==='me'){return rel($('hand').getBoundingClientRect())}
@@ -279,7 +293,7 @@ function handCenter(k){ // مركز يد اللاعب بالإحداثيات ا�
 /* ===== avatars ===== */
 const SIL='<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#d9dcf8"/><circle cx="50" cy="38" r="19" fill="#2a2d62"/><path d="M12 100C12 72 30 62 50 62C70 62 88 72 88 100Z" fill="#2a2d62"/></svg>';
 const avimg=p=>(S&&R&&T&&!DEMO)?`<img src="${PR}://${S}/zombie_av?r=${encodeURIComponent(R)}&u=${U}&t=${T}&p=${p.uid}" onerror="this.remove()" draggable="false">`:'';
-function avatar(p,i){return`<div class="avw"><div class="av" style="--rc:${RING[i%4]}">${SIL}${avimg(p)}</div>${i===0?'<div class="dbg">D</div>':''}${st.out.includes(p.uid)?`<div class="fin">🏁 #${st.out.indexOf(p.uid)+1}</div>`:''}</div>`}
+function avatar(p,i){return`<div class="avw"><div class="av" style="--rc:${RING[i%6]}">${SIL}${avimg(p)}</div>${i===0?'<div class="dbg">D</div>':''}${st.out.includes(p.uid)?`<div class="fin">🏁 #${st.out.indexOf(p.uid)+1}</div>`:''}</div>`}
 /* ===== render ===== */
 function setTheme(z){const was=stage.classList.contains('zt');stage.classList.toggle('zt',z);document.documentElement.classList.toggle('zt',z);document.body.classList.toggle('zt',z);try{tg&&tg.setBackgroundColor&&tg.setBackgroundColor(z?'#1d3b33':'#c9cdf0')}catch(e){}return was!==z}
 function commit(s){
@@ -289,18 +303,20 @@ function commit(s){
 function faceCacheClear(){}
 function render(){
   const s=st,P=s.players,n=P.length,mi=P.findIndex(p=>p.uid===U),mine=s.cur===U&&s.phase==='play',th=thNow();
-  ['t','l','r'].forEach(k=>{$('seat_'+k).innerHTML='';$('seat_'+k).className='seat '+k;$('oh_'+k).innerHTML='';$('oh_'+k).className='oh '+k;$('seat_'+k).style.display='none'});
+  stage.classList.toggle('n5',n===5);stage.classList.toggle('n6',n===6);
+  const bc=k=>(k==='tl'||k==='tr')?'t '+k:k;
+  ['t','tl','tr','l','r'].forEach(k=>{$('seat_'+k).innerHTML='';$('seat_'+k).className='seat '+bc(k);$('oh_'+k).innerHTML='';$('oh_'+k).className='oh '+bc(k);$('seat_'+k).style.display='none';$('seat_'+k).style.left=isTop(k)?topX(k,n)+'%':''});
   P.forEach((p,i)=>{const k=seatKey(p.uid);if(k==='me')return;
     const se=$('seat_'+k),oh=$('oh_'+k);se.style.display='';
-    se.className='seat '+k+(s.cur===p.uid?' on':'')+(p.n?'':' out');se.style.setProperty('--glow',GLOW[i%4]);
+    se.className='seat '+bc(k)+(s.cur===p.uid?' on':'')+(p.n?'':' out');se.style.setProperty('--glow',GLOW[i%6]);
     se.innerHTML=avatar(p,i)+`<div class="nm"><span>${esc(p.name)}</span></div>`+(s.cur===p.uid&&!mine?'<div class="tmr"><i></i></div>':'');
-    const vic=mine&&s.victim===p.uid;oh.className='oh '+k+(vic?' vic':'');
+    const vic=mine&&s.victim===p.uid;oh.className='oh '+bc(k)+(vic?' vic':'');
     const m=p.n;let h='';
-    if(k==='t'){const step=Math.min(6,58/Math.max(m,1)),w=(m-1)*step;for(let j=0;j<m;j++)h+=`<div class="bk" data-u="${p.uid}" data-i="${j}" style="left:calc(50% + ${(-w/2+j*step-6.3).toFixed(2)}cqw);top:-4.4cqw"><i>✦</i><span class="rt">RAY✦</span></div>`}
+    if(isTop(k)){const cw=tw(),span=n>=5?(vic?40:(n===6?20:28)):58,step=Math.min(n>=5?(vic?6:5):6,span/Math.max(m,1)),w=(m-1)*step,hf=w/2+cw/2+1.5,cx=Math.min(Math.max(topX(k,n),hf),100-hf);for(let j=0;j<m;j++)h+=`<div class="bk" data-u="${p.uid}" data-i="${j}" style="left:calc(${cx}% + ${(-w/2+j*step-cw/2).toFixed(2)}cqw);top:-4.4cqw"><i>✦</i><span class="rt">RAY✦</span></div>`}
     else{const step=Math.min(9.6,41/Math.max(m-1,1));for(let j=0;j<m;j++)h+=`<div class="bk" data-u="${p.uid}" data-i="${j}" style="${k==='l'?'left:-5.6cqw':'right:-5.6cqw'};top:calc(27cqh + ${(j*step).toFixed(2)}cqw);z-index:${j}"><i>✦</i><span class="rt">RAY✦</span></div>`}
     oh.innerHTML=h});
   const me=P[mi],meOut=s.out.includes(U);
-  $('me').className=mine?'on':'';$('me').style.setProperty('--glow',GLOW[mi%4]);
+  $('me').className=mine?'on':'';$('me').style.setProperty('--glow',GLOW[mi%6]);
   $('me').innerHTML=me?avatar(me,mi):'';
   const mp=$('mepill');mp.className=mine?'go':'dim';mp.textContent=mine?'دورك':(meOut?'🏁 طلعت':esc(pname(U)));
   $('mytm').className=mine?'on':'';
@@ -385,7 +401,7 @@ async function playDraw(s){
   /* الوجهة */
   const ph=P0.hand.length,W=cardW();let dst;
   if(meDraw){const hr=rel($('hand').getBoundingClientRect());dst={cx:hr.cx+Math.min(8,(82-13.7)/Math.max(ph,1))*cqw()*(ph/2)+W*.2,cy:hr.cy,w:W,h:W*1.46}}
-  else{const c=handCenter(kT);dst=kT==='t'?{cx:c.cx,cy:c.cy,w:12.6*cqw(),h:17.5*cqw()}:{cx:c.cx,cy:c.cy,w:17*cqw(),h:11.6*cqw()}}
+  else{const c=handCenter(kT);dst=isTop(kT)?{cx:c.cx,cy:c.cy,w:tw()*cqw(),h:tw()*cqw()*17.5/12.6}:{cx:c.cx,cy:c.cy,w:17*cqw(),h:11.6*cqw()}}
   const sw=src.w,sh=src.h;
   const faceFirst=meVic&&ev.card,back=backHTML();
   let html;
@@ -429,7 +445,7 @@ async function shuffleMine(old){
 async function riffle(k){
   const els=[...document.querySelectorAll(`#oh_${k} .bk`)],q=cqw(),as=[];
   els.forEach((el,i)=>{const dir=i%2?1:-1,m=10*q;let kf;
-    if(k==='t')kf=[{translate:'0 0'},{translate:`${dir*-0}px ${m*.9}px`},{translate:`${dir*m*.5}px ${m*.5}px`},{translate:`${-dir*m*.4}px ${m*.8}px`},{translate:'0 0'}];
+    if(isTop(k))kf=[{translate:'0 0'},{translate:`${dir*-0}px ${m*.9}px`},{translate:`${dir*m*.5}px ${m*.5}px`},{translate:`${-dir*m*.4}px ${m*.8}px`},{translate:'0 0'}];
     else{const sgn=k==='l'?1:-1;kf=[{translate:'0 0'},{translate:`${sgn*m*(i%2?1.2:.5)}px 0`},{translate:`${sgn*m*(i%2?.4:1.1)}px ${dir*q*2}px`},{translate:`${sgn*m*.7}px 0`},{translate:'0 0'}]}
     as.push(el.animate(kf,{duration:850,easing:'ease-in-out',delay:i*22}).finished.catch(()=>{}))});
   await Promise.all(as)}
@@ -441,7 +457,7 @@ async function playDeal(s){
   const P=pileRect(),th=thNow(),flys=[];
   const order=s.players.map(p=>p.uid);let j=0;
   const mx=Math.max(...order.map(u=>ev.n0[u]));
-  for(let r=0;r<mx;r++)order.forEach(u=>{if(r>=ev.n0[u])return;const k=seatKey(u),tc=handCenter(k),w=k==='me'?cardW()*.8:(k==='t'?12.6:11.6)*cqw()*.9;
+  for(let r=0;r<mx;r++)order.forEach(u=>{if(r>=ev.n0[u])return;const k=seatKey(u),tc=handCenter(k),w=k==='me'?cardW()*.8:(isTop(k)?tw():11.6)*cqw()*.9;
     const d=flyer(backHTML(),sizeRect({cx:P.cx,cy:P.cy},w),rnd(-20,20));d.style.opacity='0';
     const to={cx:tc.cx+rnd(-3,3),cy:tc.cy,w,h:w*1.46};
     flys.push(sleep(j*28).then(()=>{d.style.opacity='1';sfx.tick();return move(d,{cx:P.cx,cy:P.cy,w,h:w*1.46},to,{ms:380,rot1:rnd(-8,8)})}).then(()=>d.remove()));j++});
@@ -459,7 +475,7 @@ async function playDeal(s){
 /* ===== وضع تجريبي (?demo=1&n=4&z=1) — سيرفر وهمي داخل الصفحة ===== */
 let DM=null;
 function startDemo(){
-  const N=Math.max(2,Math.min(4,+Q.get('n')||4)),names=['أنت','Turfmonster3','s2ana','soniya_69'];
+  const N=Math.max(2,Math.min(6,+Q.get('n')||4)),names=['أنت','Turfmonster3','s2ana','soniya_69','نورة','أبو سعود'];
   const pk=c=>c.slice(0,-1)+('HD'.includes(c.slice(-1))?'r':'k');
   const D=DM={players:names.slice(0,N).map((n,i)=>({uid:i+1,name:n})),hands:{},pairs:[],out:[],cur:0,seq:0,ev:null,phase:'play',loser:null,deadline:0,timer:null};
   {const total=RANKS.length*4+1;let caps=[...Array(N)].map((_,i)=>Math.floor(total/N)+(i<total%N?1:0)).sort(()=>Math.random()-.5);
