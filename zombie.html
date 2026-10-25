@@ -310,7 +310,7 @@ function applyMode(){const r=isR();
   $('rules').innerHTML='<b>طريقة اللعب:</b><br>• تسحب ورقة مخفية من اللاعب اللي على يمينك.<br>• لو كوّنت زوج (نفس الرقم ونفس اللون) يترمي تلقائياً.<br>• بعد كل سحبة تنخلط أوراقك.<br>'+(r
     ?'• <b>الوضع العكسي:</b> أول لاعب يخلّص أوراقه يخسر 💀 وتنتهي اللعبة فوراً، واللي معه الزومبي 🧟 هو الفايز!'
     :'• اللي يخلّص أوراقه يطلع فائز، والباقي معه الزومبي 🧟 هو الخاسر!');
-  if(r&&!modeToast&&st.phase==='play'){modeToast=true;setTimeout(()=>toast('💀 الوضع العكسي: أول من يخلّص أوراقه يخسر، واللي معه الزومبي 🧟 يفوز!',4500),800)}}
+  if(r&&!modeToast&&st.phase==='play'){modeToast=true;setTimeout(()=>toast('💀 الوضع العكسي: كل من يخلّص أوراقه يخسر، وآخر واحد يبقى معه الزومبي 🧟 يفوز!',4500),800)}}
 function faceCacheClear(){}
 function render(){
   const s=st,P=s.players,n=P.length,mi=P.findIndex(p=>p.uid===U),mine=s.cur===U&&s.phase==='play',th=thNow();
@@ -344,7 +344,7 @@ function render(){
   /* النص */
   const pl=$('pill');let t='';pl.className='';
   if(s.phase==='play'){const vn=esc(pname(s.victim));
-    if(meOut)t=`🎉 طلعت من اللعبة<br><span style="font-size:4cqw">تفرّج على البقية</span>`;
+    if(meOut)t=`${isR()?'💀 خلّصت أوراقك… خسرت':'🎉 طلعت من اللعبة'}<br><span style="font-size:4cqw">تفرّج على البقية</span>`;
     else if(mine)t=sel?'اضغط مرة ثانية للسحب':`اختر بطاقة من<b>${vn}</b>`;
     else t=`<span style="font-size:4.4cqw"><b style="display:inline;font-size:4.6cqw">${esc(pname(s.cur))}</b> يسحب من</span><b>${vn}</b>`}
   else if(s.phase==='over')t=isR()?(s.winner===U?'🏆 فزت! الزومبي معك':(s.losers||[]).includes(U)?'💀 خلّصت أوراقك… خسرت':'🏁 انتهت اللعبة'):(s.loser===U?'🧟 أنت الزومبي!':'🎉 نجوت من الزومبي!');
@@ -354,7 +354,7 @@ function render(){
 function showEndR(){const s=st,win=s.winner===U,ls=s.losers||[],los=ls.includes(U);
   const e=$('end');e.className=thNow()==='z'?'z':'';
   const rows=`<div class="row lz"><span>🏆 ${esc(pname(s.winner))}${win?' (أنت)':''}</span><span>الفائز</span></div>`+ls.map(u=>`<div class="row"><span>💀 ${esc(pname(u))}${u===U?' (أنت)':''}</span><span>خلّص أوراقه</span></div>`).join('');
-  e.innerHTML=`<div class="box"><h1>${win?'🏆 فزت! الزومبي معك':los?'💀 خسرت! خلّصت أوراقك أولاً':'🏁 انتهت اللعبة'}</h1><div style="font:600 4cqw system-ui,Tahoma;opacity:.8">${esc(pname(s.winner))} معه الزومبي ويفوز</div><div class="zc"><div class="cf cz"><img src="${A('Z')}"></div></div>${rows}<button id="cl">إغلاق</button></div>`;
+  e.innerHTML=`<div class="box"><h1>${win?'🏆 فزت! الزومبي معك':los?'💀 خسرت! خلّصت أوراقك':'🏁 انتهت اللعبة'}</h1><div style="font:600 4cqw system-ui,Tahoma;opacity:.8">${esc(pname(s.winner))} معه الزومبي ويفوز</div><div class="zc"><div class="cf cz"><img src="${A('Z')}"></div></div>${rows}<button id="cl">إغلاق</button></div>`;
   e.hidden=false;$('cl').onclick=()=>{if(tg)tg.close();else e.hidden=true};
   los?sfx.zom():sfx.free()}
 function showEnd(){if(isR())return showEndR();const s=st,lz=s.loser===U,list=[...s.out,s.loser].filter(x=>x!==null&&x!==undefined);
@@ -521,7 +521,7 @@ function startDemo(){
     const fin=[];if(!vh.length){D.out.push(v);fin.push(v)}if(!h.length){D.out.push(u);fin.push(u)}
     let shuf=false;if(h.length>1){h.sort(()=>Math.random()-.5);shuf=true}
     D.ev={seq:++D.seq,type:'draw',from:v,to:u,idx:i,card:c,pair,shuf,fin,z:c==='Z'};
-    if(D.mode==='first'?fin.length:alive().length<=1){D.phase='over';if(D.mode==='first'){D.losers=[...D.out];D.loser=D.out[0];D.winner=D.players.find(p=>D.hands[p.uid].includes('Z')).uid}else D.loser=alive()[0]}else D.cur=D.players.findIndex(p=>p.uid===nextAlive(u));
+    if(alive().length<=1){D.phase='over';if(D.mode==='first'){D.losers=[...D.out];D.loser=D.out[0];D.winner=alive()[0]}else D.loser=alive()[0]}else D.cur=D.players.findIndex(p=>p.uid===nextAlive(u));
     D.push();D.bot()};
   D.bot=()=>{clearTimeout(D.timer);if(D.phase!=='play'||D.players[D.cur].uid===1)return;D.timer=setTimeout(()=>{const v=victim();D.pick(D.players[D.cur].uid,Math.floor(Math.random()*D.hands[v].length))},3600+Math.random()*1400)};
   D.push();D.bot();
