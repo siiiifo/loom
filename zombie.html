@@ -73,6 +73,7 @@ body.zt,html.zt{background:#1d3b33}
 .nm::before{content:"";flex:none;width:2.1cqw;height:2.1cqw;border-radius:50%;background:#6bd35b;box-shadow:0 0 1cqw #6bd35b}
 .seat.out .nm::before{background:#9aa}
 .dbg{position:absolute;right:-1.5cqw;top:-2cqw;width:5.6cqw;height:5.6cqw;border-radius:50%;background:#fff;color:#1d2150;font:800 3.3cqw/5.6cqw system-ui;text-align:center;box-shadow:0 .3cqw .8cqw #0004;z-index:2}
+.fin.lose{background:#3a1a1a;color:#ffd6d6}
 .fin{position:absolute;left:50%;bottom:-2.4cqw;transform:translateX(-50%);background:#ffd23f;color:#4a3300;border-radius:3cqw;padding:.3cqw 1.8cqw;font:800 3cqw/1.5 system-ui;white-space:nowrap;z-index:2;box-shadow:0 .3cqw .8cqw #0004}
 .tmr{height:1.5cqw;width:16cqw;border-radius:2cqw;background:#0003;overflow:hidden}
 .tmr i{display:block;height:100%;width:100%;background:var(--acc);border-radius:2cqw}
@@ -205,7 +206,7 @@ body.zt,html.zt{background:#1d3b33}
  </svg>
 
  <button class="top" id="mn">menu</button>
- <div id="mchip" hidden>💀 أول من يخلّص أوراقه يخسر</div>
+ <div id="mchip" hidden>💀 من يخلّص أوراقه يخسر</div>
  <div id="board">
 
  <div class="oh t" id="oh_t"></div><div class="oh t tl" id="oh_tl"></div><div class="oh t tr" id="oh_tr"></div><div class="oh l" id="oh_l"></div><div class="oh r" id="oh_r"></div>
@@ -296,14 +297,14 @@ function handCenter(k){ // مركز يد اللاعب بالإحداثيات ا�
 /* ===== avatars ===== */
 const SIL='<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#d9dcf8"/><circle cx="50" cy="38" r="19" fill="#2a2d62"/><path d="M12 100C12 72 30 62 50 62C70 62 88 72 88 100Z" fill="#2a2d62"/></svg>';
 const avimg=p=>(S&&R&&T&&!DEMO)?`<img src="${PR}://${S}/zombie_av?r=${encodeURIComponent(R)}&u=${U}&t=${T}&p=${p.uid}" onerror="this.remove()" draggable="false">`:'';
-function avatar(p,i){return`<div class="avw"><div class="av" style="--rc:${RING[i%6]}">${SIL}${avimg(p)}</div>${i===0?'<div class="dbg">D</div>':''}${st.out.includes(p.uid)?`<div class="fin">🏁 #${st.out.indexOf(p.uid)+1}</div>`:''}</div>`}
+function avatar(p,i){return`<div class="avw"><div class="av" style="--rc:${RING[i%6]}">${SIL}${avimg(p)}</div>${i===0?'<div class="dbg">D</div>':''}${st.out.includes(p.uid)?`<div class="fin${isR()?' lose':''}">${isR()?'💀':'🏁'} #${st.out.indexOf(p.uid)+1}</div>`:''}</div>`}
 /* ===== render ===== */
 function setTheme(z){const was=stage.classList.contains('zt');stage.classList.toggle('zt',z);document.documentElement.classList.toggle('zt',z);document.body.classList.toggle('zt',z);try{tg&&tg.setBackgroundColor&&tg.setBackgroundColor(z?'#1d3b33':'#c9cdf0')}catch(e){}return was!==z}
 function commit(s){
   const th0=thNow();st=s;off=s.now-Date.now()/1000;sel=null;locked=false;
   const z=s.hand.includes('Z');setTheme(z);if(thNow()!==th0)faceCacheClear();
   applyMode();render()}
-const isR=()=>!!st&&st.mode==='first';   // الوضع العكسي: أول من يخلّص أوراقه يخسر
+const isR=()=>!!st&&st.mode==='first';   // الوضع العكسي: كل من يخلّص أوراقه يخسر
 let modeToast=false;
 function applyMode(){const r=isR();
   $('mchip').hidden=!r;
@@ -329,7 +330,7 @@ function render(){
   const me=P[mi],meOut=s.out.includes(U);
   $('me').className=mine?'on':'';$('me').style.setProperty('--glow',GLOW[mi%6]);
   $('me').innerHTML=me?avatar(me,mi):'';
-  const mp=$('mepill');mp.className=mine?'go':'dim';mp.textContent=mine?'دورك':(meOut?'🏁 طلعت':esc(pname(U)));
+  const mp=$('mepill');mp.className=mine?'go':'dim';mp.textContent=mine?'دورك':(meOut?(isR()?'💀 خسرت':'🏁 طلعت'):esc(pname(U)));
   $('mytm').className=mine?'on':'';
   /* اليد */
   const H=s.hand,N=H.length,W=13.7,step=N>1?Math.min(8,(82-W)/(N-1)):0;let hh='';
@@ -347,14 +348,14 @@ function render(){
     if(meOut)t=`${isR()?'💀 خلّصت أوراقك… خسرت':'🎉 طلعت من اللعبة'}<br><span style="font-size:4cqw">تفرّج على البقية</span>`;
     else if(mine)t=sel?'اضغط مرة ثانية للسحب':`اختر بطاقة من<b>${vn}</b>`;
     else t=`<span style="font-size:4.4cqw"><b style="display:inline;font-size:4.6cqw">${esc(pname(s.cur))}</b> يسحب من</span><b>${vn}</b>`}
-  else if(s.phase==='over')t=isR()?(s.winner===U?'🏆 فزت! الزومبي معك':(s.losers||[]).includes(U)?'💀 خلّصت أوراقك… خسرت':'🏁 انتهت اللعبة'):(s.loser===U?'🧟 أنت الزومبي!':'🎉 نجوت من الزومبي!');
+  else if(s.phase==='over')t=isR()?(s.winner===U?'🏆 فزت! الزومبي معك':(s.losers||[]).includes(U)?'💀 خلّصت أوراقك… خسرت':'🧟 انتهت اللعبة'):(s.loser===U?'🧟 أنت الزومبي!':'🎉 نجوت من الزومبي!');
   pl.innerHTML=t;
   if(s.phase==='over'&&!endShown){endShown=true;setTimeout(showEnd,first?100:900)}
 }
 function showEndR(){const s=st,win=s.winner===U,ls=s.losers||[],los=ls.includes(U);
   const e=$('end');e.className=thNow()==='z'?'z':'';
   const rows=`<div class="row lz"><span>🏆 ${esc(pname(s.winner))}${win?' (أنت)':''}</span><span>الفائز</span></div>`+ls.map(u=>`<div class="row"><span>💀 ${esc(pname(u))}${u===U?' (أنت)':''}</span><span>خلّص أوراقه</span></div>`).join('');
-  e.innerHTML=`<div class="box"><h1>${win?'🏆 فزت! الزومبي معك':los?'💀 خسرت! خلّصت أوراقك':'🏁 انتهت اللعبة'}</h1><div style="font:600 4cqw system-ui,Tahoma;opacity:.8">${esc(pname(s.winner))} معه الزومبي ويفوز</div><div class="zc"><div class="cf cz"><img src="${A('Z')}"></div></div>${rows}<button id="cl">إغلاق</button></div>`;
+  e.innerHTML=`<div class="box"><h1>${win?'🏆 فزت! الزومبي معك':los?'💀 خسرت! خلّصت أوراقك':'🧟 انتهت اللعبة'}</h1><div style="font:600 4cqw system-ui,Tahoma;opacity:.8">${esc(pname(s.winner))} معه الزومبي ويفوز</div><div class="zc"><div class="cf cz"><img src="${A('Z')}"></div></div>${rows}<button id="cl">إغلاق</button></div>`;
   e.hidden=false;$('cl').onclick=()=>{if(tg)tg.close();else e.hidden=true};
   los?sfx.zom():sfx.free()}
 function showEnd(){if(isR())return showEndR();const s=st,lz=s.loser===U,list=[...s.out,s.loser].filter(x=>x!==null&&x!==undefined);
@@ -487,7 +488,7 @@ async function playDeal(s){
   const show=all.slice(0,8);
   await Promise.all(show.map(([u,pp],i)=>sleep(i*150).then(()=>flyPair(pp[0],pp[1],handCenter(seatKey(u))))));
   pileEl.style.opacity='';
-  (ev.fin||[]).forEach((u,i)=>setTimeout(()=>toast(u===U?'🎉 خلّصت أوراقك من البداية!':`🏁 ${pname(u)} خلّص أوراقه!`),i*1200));
+  (ev.fin||[]).forEach((u,i)=>setTimeout(()=>toast(isR()?(u===U?'💀 خلّصت أوراقك من البداية… خسرت!':`💀 ${pname(u)} خلّص أوراقه وخسر!`):(u===U?'🎉 خلّصت أوراقك من البداية!':`🏁 ${pname(u)} خلّص أوراقه!`)),i*1200));
   fx.innerHTML=''}
 /* ===== وضع تجريبي (?demo=1&n=4&z=1) — سيرفر وهمي داخل الصفحة ===== */
 let DM=null;
