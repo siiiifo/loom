@@ -153,6 +153,23 @@ var gseed=q.get('g')||'',demo=!gseed;
 var cseed=q.get('s')||('d'+Math.floor(Math.random()*1e9));
 if(demo)gseed='demo'+Math.floor(Math.random()*1e9);
 var IV=Math.max(2,parseFloat(q.get('i'))||6); /* 2ث دحرجة+نداء ثم 4ث انتظار */
+/* مزامنة الساعة: كل اللاعبين يحسبون الوقت بساعة السيرفر مو ساعة الجوال (فرق الساعات كان يسبب اختلاف العدّاد 10/20/40) */
+var SKEW=0;
+function nowS(){return (Date.now()+SKEW)/1000;}
+function syncClock(done){
+ var url=location.href.split('#')[0].split('?')[0],samples=[],n=0,fin=false;
+ function end(){if(fin)return;fin=true;
+  if(samples.length){samples.sort(function(a,b){return a.rtt-b.rtt;});SKEW=samples[0].skew;}
+  done();}
+ setTimeout(end,3000);
+ function one(){
+  var t0=Date.now();
+  fetch(url+'?_='+t0+n,{method:'HEAD',cache:'no-store'}).then(function(r){
+   var t1=Date.now(),d=Date.parse(r.headers.get('date')||''),age=parseInt(r.headers.get('age')||'0',10)||0;
+   if(!isNaN(d)){var srv=d+age*1000+500;samples.push({rtt:t1-t0,skew:srv-(t0+t1)/2});}
+  }).catch(function(){}).then(function(){if(++n<3)one();else end();});}
+ try{one();}catch(e){end();}
+}
 var BEGIN=parseFloat(q.get('b'))||(Date.now()/1000+(demo?3:5));
 var RELAY=(q.get('r')||'').replace(/[^A-Za-z0-9_-]/g,'');
 /* ===== مولّد عشوائي حتمي (نفس الخوارزمية بالبوت) ===== */
@@ -201,7 +218,7 @@ var rowbtn=document.getElementById('rowbtn');P(rowbtn,120,254+10,PW-240,GAP-20);
 var bt=document.getElementById('bt');P(bt,250,1350,616,160);
 /* ===== الأرقام المنادية ===== */
 var called=[],ended=false;
-function calledCount(){var n=Math.floor((Date.now()/1000-BEGIN)/IV)+1;return Math.max(0,Math.min(75,n));}
+function calledCount(){var n=Math.floor((nowS()-BEGIN)/IV)+1;return Math.max(0,Math.min(75,n));}
 function isCalled(v){return called.indexOf(v)>=0;}
 function tap(v,b){
  if(ended){toast('انتهت الجولة');return;}
@@ -495,7 +512,7 @@ function rayMqtt(filters,onMsg,urls){
 var shown=0,first=true;
 function tick(){
  var n=calledCount();
- if(n===0){var left=Math.ceil(BEGIN-Date.now()/1000);cd.textContent=left>0?('تبدأ اللعبة بعد '+left):'';}
+ if(n===0){var left=Math.ceil(BEGIN-nowS());cd.textContent=left>0?('تبدأ اللعبة بعد '+left):'';}
  else if(cd.textContent)cd.textContent='';
  if(first){first=false;shown=n;called=ORDER.slice(0,n);called.slice(-5).forEach(function(v){addSlot(v);});
   slots.forEach(function(s){s.el.classList.remove('new');});if(slots.length)slots[slots.length-1].el.classList.add('new');return;}
@@ -504,7 +521,7 @@ function tick(){
  if(shown>=75&&!queue.length&&!busy&&!ended){/* انتهت الأرقام */}
 }
 // قبل الإضافة الأولى: ضع الأرقام الأولية بدون أنيميشن ثم أكمل
-tick();setInterval(tick,250);
+var _go=function(){tick();setInterval(tick,250);};if(demo)_go();else syncClock(_go);
 // الـ cd يستخدم وحدات cqw: حدّد container
 st.style.containerType='inline-size';
 })();
