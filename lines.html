@@ -118,6 +118,18 @@ function $(i){return document.getElementById(i)}
 var DEMO=!!q.get('demo');
 var S=null,WS=null,DEAD=false,AV={},rcv=0,pending=0,TR=0,HID=0,lastN=-1,prevMv=0,lastRx=0,cL=[],cH=[],cC=[],cB=[],lastSt="";
 var G={};            // الهندسة
+var flashedLen=-1,flashAnim=null,pendF=-1;   // وميض آخر خط
+/* وميض آخر خط انلعب (لي أو للخصم) عشان الطرف الثاني يعرف وين اللعبة */
+function flashLine(i){
+  if(document.hidden){pendF=i;return}              // لو التطبيق بالخلفية نأجّل الوميض لين يرجع اللاعب
+  var el=lnEls[i];if(!el||!el.animate)return;
+  try{flashAnim&&flashAnim.cancel()}catch(e){}
+  var on='drop-shadow(0 0 5px rgba(255,236,140,.95)) brightness(1.25)',off='drop-shadow(0 0 0 rgba(255,236,140,0)) brightness(1)',kf=[],k;
+  for(k=0;k<3;k++){kf.push({opacity:1,filter:on},{opacity:.12,filter:off});}   // 3 وميضات
+  kf.push({opacity:1,filter:off});
+  try{flashAnim=el.animate(kf,{duration:3000,delay:220,easing:'ease-in-out'})}catch(e){}
+  pendF=-1;
+}
 var hitEls=[],lnEls=[],capEls=[],bxEls=[];
 function hap(k,v){try{tg&&tg.HapticFeedback&&(k==='n'?tg.HapticFeedback.notificationOccurred(v):tg.HapticFeedback.impactOccurred(v));}catch(e){}}
 function say(t,ms){var m=$('msg');m.innerHTML='';if(!t)return;var s=document.createElement('span');s.textContent=t;m.appendChild(s);clearTimeout(say.t);say.t=setTimeout(function(){m.innerHTML=''},ms||2200)}
@@ -218,6 +230,9 @@ function render(){
   for(i=0;i<NB;i++){var bo=S.bx[i],be=bxEls[i];
     var bc2='bx'+(bo!==-1?' '+colorOf(bo):'')+((bo!==-1&&nb[i]&&S.mv.length>prevMv)?' new':'');
     if(cB[i]!==bc2){be.className=bc2;cB[i]=bc2}}
+  // وميض آخر خط (يشتغل لحركتي وحركة الخصم)
+  if(S.mv.length<flashedLen)flashedLen=S.mv.length;
+  if(S.last>=0&&S.mv.length>flashedLen){flashedLen=S.mv.length;flashLine(S.last);}
   // أصوات/اهتزاز
   if(S.mv.length>prevMv&&prevMv>0&&S.last>=0){var mover=S.e[S.last];
     if(S.lb&&S.lb.length)hap('n',mover===m?'success':'warning');else if(mover!==m)hap('i','light');}
@@ -287,7 +302,7 @@ setInterval(function(){
     try{WS.send('{"a":"p"}')}catch(x){wake(true)}
   }else if(WS.readyState>1){conn()}
 },6000);
-document.addEventListener('visibilitychange',function(){if(document.hidden)HID=Date.now();else wake(Date.now()-HID>1500)});
+document.addEventListener('visibilitychange',function(){if(document.hidden)HID=Date.now();else{wake(Date.now()-HID>1500);if(pendF>=0)flashLine(pendF)}});
 addEventListener('online',function(){wake(true)});
 addEventListener('pageshow',function(e){if(e.persisted)wake(true)});
 /* ---------- تجربة بدون سيرفر (?demo=1) ---------- */
