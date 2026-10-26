@@ -10,8 +10,8 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;touch-action:manipulation;
   font-family:"SF Arabic","Segoe UI",Tahoma,"Noto Sans Arabic",Arial,sans-serif}
-#app{position:relative;max-width:560px;height:100%;margin:0 auto;display:flex;flex-direction:column;
-  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#app{position:relative;max-width:560px;height:var(--SH,100%);margin:0 auto;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 52px)}
 .sl{position:relative;flex:none;width:100%;direction:ltr}
 .sl .bgi{position:absolute;inset:0;background-repeat:no-repeat;background-size:100% 100%}
 #hdr{aspect-ratio:1225/300}
@@ -85,6 +85,23 @@ html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;touch-action
 #msg{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 6px);text-align:center;z-index:15;pointer-events:none}
 #msg span{display:inline-block;padding:6px 14px;border-radius:999px;background:rgba(20,20,20,.88);color:#ffd76a;font-size:13px;font-weight:700}
 #msg:empty{display:none}
+/* ===== الشات ===== */
+#cdock{position:absolute;left:8px;right:8px;bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;gap:8px;transform:translateY(var(--KY,0px));direction:rtl}
+#chatp{height:min(250px,calc(var(--SH,700px)*.42));background:#fffdf6f2;border:2px solid #d6a63a;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 6px 20px #0004}
+#chatp[hidden]{display:none}
+#chatl{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:8px;display:flex;flex-direction:column;gap:6px;user-select:text;-webkit-user-select:text;direction:rtl}
+#chatl:empty::before{content:"ما فيه رسائل بعد… ابدأ الدردشة 👋";margin:auto;font:600 14px system-ui,Tahoma;opacity:.55;color:#171207}
+.cm{background:#f3ead3;color:#171207;border-radius:12px;padding:4px 11px;font:500 15px/1.55 system-ui,Tahoma;align-self:flex-start;max-width:88%;unicode-bidi:plaintext;word-break:break-word}
+.cm.me{align-self:flex-end;background:#ffe39a}
+.cm b{color:#a9751a;margin-inline-end:6px;font-size:13px}
+#emo2{display:none;grid-template-columns:repeat(8,1fr);background:#fffdf6f2;border:1.5px solid #d6a63a;border-radius:12px;padding:4px}
+#emo2.show{display:grid}#emo2 button{background:none;border:0;font-size:24px;height:36px;padding:0}
+#cbar{position:relative;display:flex;align-items:center;gap:8px;height:42px;padding:0 6px;border-radius:21px;background:#fffdf6f2;border:1.5px solid #d6a63a;box-shadow:0 3px 10px #0003}
+#cbar button{flex:none;width:32px;height:32px;border-radius:50%;border:0;padding:0;display:flex;align-items:center;justify-content:center;background:none;font-size:21px;line-height:1}
+#csd{background:linear-gradient(180deg,#ffe28a,#d49a1c)!important}#csd svg{width:16px;height:16px;fill:#1b1303}
+#cin{flex:1;min-width:0;height:100%;background:transparent;border:0;outline:0;color:#171207;font:16px system-ui,Tahoma;text-align:right;direction:rtl;-webkit-user-select:text;user-select:text}
+#cin::placeholder{color:#8a7a52;opacity:.8}
+#cbadge{position:absolute!important;left:-4px;top:-8px;width:20px!important;height:20px!important;background:#e33!important;color:#fff;font:800 11px/20px system-ui!important;z-index:2}#cbadge[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -103,6 +120,7 @@ html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;touch-action
     <div class="bgi"></div>
     <div id="st" class="ab"></div>
   </div>
+  <div id="cdock"><div id="chatp" hidden><div id="chatl"></div></div><div id="emo2"></div><div id="cbar"><button id="est" aria-label="emoji">😊</button><input id="cin" maxlength="100" placeholder="اكتب رسالتك..." autocomplete="off" enterkeyhint="send"><button id="csd" aria-label="send"><svg viewBox="0 0 24 24"><path d="M3 11.2L20.6 3.4c.8-.3 1.5.4 1.2 1.2L14 22c-.4.9-1.7.8-1.9-.2l-1.4-6.5-6.5-1.4c-1-.2-1.1-1.5-.2-1.9z" transform="rotate(-8 12 12) scale(-1 1) translate(-24 0)"/></svg></button><button id="cbadge" hidden></button></div></div>
 </div>
 <div id="msg"></div>
 <div id="res"><div id="card"><h1 id="rh"></h1><div class="big" id="rb"></div><p id="rp"></p><button id="rc">إغلاق</button></div></div>
@@ -282,6 +300,8 @@ function conn(){
   w.onopen=function(){TR=0;lastRx=Date.now();say('');};
   w.onmessage=function(e){lastRx=Date.now();try{var s=JSON.parse(e.data);
     if(s.t==='pong')return;
+    if(s.t==='chat'){chatRecv(s);return}
+    if(s.t==='chatlog'){(s.l||[]).forEach(function(x){chatRecv(x,true)});return}
     if(s.t==='err'){if(s.fatal)fatal(s.m);else say(s.m);return}
     if(s.av!=null){AV[s.av]=s.img;if(S)render();return}
     apply(s)}catch(x){}};
@@ -305,6 +325,55 @@ setInterval(function(){
 document.addEventListener('visibilitychange',function(){if(document.hidden)HID=Date.now();else{wake(Date.now()-HID>1500);if(pendF>=0)flashLine(pendF)}});
 addEventListener('online',function(){wake(true)});
 addEventListener('pageshow',function(e){if(e.persisted)wake(true)});
+/* ---------- الشات ---------- */
+var chatRecv=(function(){
+  var P=$('chatp'),L=$('chatl'),B=$('cbadge'),CI=$('cin'),seen={},open=false,unread=0,swallow=false,last=0;
+  var EM=['😂','🔥','👏','😍','😎','🎉','❤️','😮','🙏','😡','😭','🤩','👍','💯','🧠','⏰'];
+  EM.forEach(function(e){var b=document.createElement('button');b.textContent=e;b.onclick=function(){say(e)};$('emo2').appendChild(b)});
+  function upd(){B.hidden=!unread;B.textContent=unread>9?'9+':unread}
+  function setOpen(v){if(v===open)return;open=v;P.hidden=!v;if(v){unread=0;upd();L.scrollTop=L.scrollHeight}else{$('emo2').classList.remove('show');CI.blur()}}
+  function add(m,quiet){
+    if(m.i&&seen[m.i])return;if(m.i)seen[m.i]=1;
+    var mine=String(m.u)===String(U);
+    if(L.children.length>=100)L.firstChild.remove();
+    var d=document.createElement('div');d.className='cm'+(mine?' me':'');
+    var b=document.createElement('b'),t=document.createElement('span');
+    b.textContent=String(m.n||'').slice(0,20);t.textContent=String(m.m||'').slice(0,100);
+    d.appendChild(b);d.appendChild(t);L.appendChild(d);
+    if(open)L.scrollTop=L.scrollHeight;else if(!mine&&!quiet){unread++;upd();hap('i','light')}
+  }
+  function say(t){
+    t=String(t||'').trim().slice(0,100);if(!t||Date.now()-last<1000)return;
+    if(DEMO){last=Date.now();CI.value='';$('emo2').classList.remove('show');
+      add({i:'d'+Date.now(),u:U,n:'أنت',m:t});setTimeout(function(){add({i:'e'+Date.now(),u:'2',n:'F3_',m:'😂 دورك!'})},1500);return}
+    if(send({a:'chat',m:t})){last=Date.now();CI.value='';$('emo2').classList.remove('show')}
+  }
+  CI.addEventListener('focus',function(){setOpen(true)});CI.addEventListener('click',function(){setOpen(true)});B.onclick=function(){setOpen(true)};
+  $('est').onclick=function(){setOpen(true);$('emo2').classList.toggle('show')};
+  $('csd').onclick=function(){say(CI.value)};CI.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();say(CI.value)}};
+  function inside(t){return t&&t.closest&&t.closest('#cdock')}
+  /* لمسة خارج الشات تسكّره فقط (ما تنحسب لمسة على اللوحة) */
+  document.addEventListener('pointerdown',function(e){if(!open||inside(e.target))return;swallow=true;setTimeout(function(){swallow=false},500);setOpen(false);e.preventDefault();e.stopPropagation()},true);
+  document.addEventListener('click',function(e){if(swallow){swallow=false;e.preventDefault();e.stopPropagation()}},true);
+  return add;
+})();
+/* مقاس ثابت للصفحة: الكيبورد ما يصغّر اللوحة، بس يرفع شريط الشات */
+(function(){
+  var rs=document.documentElement.style,vv=window.visualViewport,CI=$('cin'),dock=$('cdock'),stable=0,lastBlur=0;
+  function vis(){return Math.round(Math.min(window.innerHeight,vv?vv.height+vv.offsetTop:1e9))}
+  function typing(){return document.activeElement===CI}
+  function apply(){
+    var v=vis();if(!stable||(!typing()&&Date.now()-lastBlur>800))stable=Math.max(v,200);
+    rs.setProperty('--SH',stable+'px');
+    var ky=typing()&&v<stable-60?-Math.max(0,stable-v-4):0;dock.style.setProperty('--KY',ky+'px');
+    if(window.scrollY||window.scrollX)window.scrollTo(0,0);
+  }
+  function later(){[60,250,500,900].forEach(function(t){setTimeout(apply,t)})}
+  window.addEventListener('resize',apply);if(vv){vv.addEventListener('resize',apply);vv.addEventListener('scroll',apply)}
+  CI.addEventListener('focus',function(){apply();later()});CI.addEventListener('blur',function(){lastBlur=Date.now();apply();setTimeout(apply,900);later()});
+  if(tg&&tg.onEvent)['viewportChanged','safeAreaChanged','contentSafeAreaChanged'].forEach(function(n){try{tg.onEvent(n,apply)}catch(e){}});
+  apply();
+})();
 /* ---------- تجربة بدون سيرفر (?demo=1) ---------- */
 function demoMove(i){
   S.e[i]=S.t;S.mv.push(i);S.last=i;S.lb=[];
@@ -322,7 +391,7 @@ function init(){
   } else {render();conn();}
   setInterval(status,250);
 }
-var rz;addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){layoutHdr();buildBoard();render()},120)});
+var rz;addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){if(document.activeElement===$('cin'))return;layoutHdr();buildBoard();render()},120)});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>

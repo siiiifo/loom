@@ -223,13 +223,16 @@ function buildStatic(){
   }
 }
 /* ======= الحالة ======= */
+let lastMsg=Date.now(),connAt=Date.now();
 let S_=null,ws=null,dead=false,off=0,sel={ci:-1,prefix:[],m:null},seenChat=0;
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)}
 function connect(){
   if(dead)return;
   if(ws&&ws.readyState<=1)return;
+  connAt=lastMsg=Date.now();
   ws=new WebSocket(`wss://${SV}/ws_jk?r=${encodeURIComponent(R)}&u=${UID}&t=${T}`);
-  ws.onmessage=e=>{const m=JSON.parse(e.data);
+  ws.onmessage=e=>{lastMsg=Date.now();const m=JSON.parse(e.data);
+    if(m.t==='ping'){off=m.now*1000-Date.now();return}
     if(m.t==='state')onState(m.s);
     else if(m.t==='chat')onChat(m);
     else if(m.t==='chatlog'){chatLog=m.l||[];unread=0;drawBadge();drawLog()}
@@ -242,10 +245,13 @@ let hidAt=0,tries=0;
 function wake(force){
   if(dead||!ws)return;
   if(ws.readyState>1){connect();return}
-  if(ws.readyState===1&&force){const o=ws;ws=null;try{o.onclose=null;o.close()}catch(e){}connect()}
+  if(force){const o=ws;ws=null;try{o.onclose=null;o.close()}catch(e){}connect()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)hidAt=Date.now();else wake(Date.now()-hidAt>4000)});
 addEventListener('online',()=>wake(true));
+addEventListener('focus',()=>wake(Date.now()-lastMsg>15000));
+/* حارس الاتصال: لو ما وصل شي 25ث (اتصال ميت بدون ما يعلن) أو الاتصال عالق 12ث، نعيد الاتصال تلقائياً */
+setInterval(()=>{if(dead||!ws)return;const t=Date.now();if(ws.readyState===1&&t-lastMsg>25000)wake(true);else if(ws.readyState===0&&t-connAt>12000)wake(true)},4000);
 addEventListener('pageshow',e=>{if(e.persisted)wake(true)});
 
 function send(o){if(ws&&ws.readyState===1){try{ws.send(JSON.stringify(o));return}catch(e){}}toast('انقطع الاتصال، جاري إعادة المحاولة...');wake(true)}
