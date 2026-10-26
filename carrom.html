@@ -110,7 +110,7 @@ const SP={};for(const k in IMG){const i=new Image();i.src=IMG[k];SP[k]=i}
    • إحداثيات العالم (السيرفر) مركزها منتصف رسمة اللوحة؛ الاتجاهات تُرسل للسيرفر بإحداثيات العالم.
    • رابط الدخول: ?r=الغرفة&u=رقمي&t=التوكن&s=مضيف السيرفر&n=اسمي
    • معاينة التصميم بدون سيرفر: ?demo=1&mode=1v1|2v2&seat=0..3                                     */
-const D=1254,CR=18,SR=36,PR=34,R=160,VM=6,DEC_C=.01458,DEC_S=.007,WALL_E=.82,HW=359,HH=318;
+const D=1254,CR=18,SR=36,PR=34,R=160,VM=10,DEC_C=.0036,DEC_S=.0025,DRAG_C=.995,DRAG_S=.997,MS=2.4,REST=1.92,PASSES=3,WALL_E=.85,HW=359,HH=318;
 const PK=[[-331,-301],[331,-301],[-331,301],[331,301]];                        // لازم تطابق carrom_server.py
 const LANE={0:[247,214],1:[270,190],2:[247,214],3:[270,190]};                    // [بُعد الخط عن المركز, نصف طوله]
 const ROT=[[1,0,0,1],[0,-1,1,0],[-1,0,0,-1],[0,1,-1,0]];
@@ -135,19 +135,19 @@ function nm(i){return (ST&&ST.players[i])?ST.players[i].name:''}
 // ---------- محاكاة مطابقة للسيرفر (نفس ترتيب العمليات بالضبط) ----------
 function subStep(bodies,out){
   const n=bodies.length,pk=new Array(n).fill(false),lim=PR-4;
-  for(let i=0;i<n;i++){const o=bodies[i];o[0]+=o[2];o[1]+=o[3];const dec=o[5]==='s'?DEC_S:DEC_C,sp=Math.sqrt(o[2]*o[2]+o[3]*o[3]);if(sp<=dec){o[2]=0;o[3]=0}else{const k=(sp-dec)/sp;o[2]*=k;o[3]*=k}
+  for(let i=0;i<n;i++){const o=bodies[i];o[0]+=o[2];o[1]+=o[3];const st=o[5]==='s',dec=st?DEC_S:DEC_C,dr=st?DRAG_S:DRAG_C;o[2]*=dr;o[3]*=dr;const sp=Math.sqrt(o[2]*o[2]+o[3]*o[3]);if(sp<=dec){o[2]=0;o[3]=0}else{const k=(sp-dec)/sp;o[2]*=k;o[3]*=k}
     for(const p of PK){const dx=o[0]-p[0],dy=o[1]-p[1];if(Math.sqrt(dx*dx+dy*dy)<lim){pk[i]=true;break}}
     if(pk[i])continue;const r=o[4];
     if(o[0]<-HW+r){o[0]=-HW+r;o[2]=Math.abs(o[2])*WALL_E}
     if(o[0]>HW-r){o[0]=HW-r;o[2]=-Math.abs(o[2])*WALL_E}
     if(o[1]<-HH+r){o[1]=-HH+r;o[3]=Math.abs(o[3])*WALL_E}
     if(o[1]>HH-r){o[1]=HH-r;o[3]=-Math.abs(o[3])*WALL_E}}
-  for(let i=0;i<n;i++){if(pk[i])continue;const a=bodies[i];
+  for(let ps=0;ps<PASSES;ps++)for(let i=0;i<n;i++){if(pk[i])continue;const a=bodies[i];
     for(let j=i+1;j<n;j++){if(pk[j])continue;const b=bodies[j];const dx=b[0]-a[0];if(dx>54||dx<-54)continue;
       const dy=b[1]-a[1],d=Math.sqrt(dx*dx+dy*dy),m=a[4]+b[4];if(d>=m||d===0)continue;
-      const nx=dx/d,ny=dy/d,ma=a[5]==='s'?1.6:1,mb=b[5]==='s'?1.6:1,ov=m-d;
+      const nx=dx/d,ny=dy/d,ma=a[5]==='s'?MS:1,mb=b[5]==='s'?MS:1,ov=m-d;
       a[0]-=nx*ov*mb/(ma+mb);a[1]-=ny*ov*mb/(ma+mb);b[0]+=nx*ov*ma/(ma+mb);b[1]+=ny*ov*ma/(ma+mb);
-      const rv=(b[2]-a[2])*nx+(b[3]-a[3])*ny;if(rv>0)continue;const j2=-1.9*rv/(1/ma+1/mb);
+      const rv=(b[2]-a[2])*nx+(b[3]-a[3])*ny;if(rv>0)continue;const j2=-REST*rv/(1/ma+1/mb);
       a[2]-=j2*nx/ma;a[3]-=j2*ny/ma;b[2]+=j2*nx/mb;b[3]+=j2*ny/mb}}
   if(pk.some(Boolean)){const keep=[];for(let i=0;i<n;i++){if(pk[i]){out.push([bodies[i][6],bodies[i][5]])}else keep.push(bodies[i])}bodies.length=0;keep.forEach(b=>bodies.push(b))}
 }
