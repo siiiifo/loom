@@ -149,6 +149,9 @@
   function now() { return Date.now() + skew; }
   var $ = function (id) { return document.getElementById(id); };
 
+  var seedKey = seed + '_' + (parseInt(q.get('b'), 10) || 0), tapsKey = 'tw_taps_' + seedKey, resKey = 'tw_res_' + seedKey, resData = null;
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   var phase = 'wait', floors = 0, perfects = 0, taps = [], st = newState(), S = SPAWN0, sent = false, bestShow = bestPrev;
   var blocks = [], pieces = [], fx = [], texts = [], lastDrop = 0, flash = 0, camH = 0, hoverT = 0;
 
@@ -323,14 +326,29 @@
         demo ? 'تجربة فقط: افتح الصفحة من تيليجرام لإرسال النتيجة' : 'جاري إرسال نتيجتك...',
         rec ? '<div class="rec">🏆 رقم قياسي جديد!</div>' : '');
     }, reason === 'fall' ? 650 : 0);
-    if (!demo) setTimeout(send, reason === 'fall' ? 1500 : 900);
+    if (!demo) {
+      resData = encode(); lsSet(resKey, resData);   // نحفظ النتيجة محلياً عشان تنرسل لاحقاً لو انقطع الإرسال
+      setTimeout(send, reason === 'fall' ? 450 : 250);
+    }
   }
   function send() {
     if (sent) return; sent = true;
     try { if (tg) tg.disableClosingConfirmation(); } catch (e) {}
-    var data = encode();
-    if (tg && tg.sendData) tg.sendData(data); else $('cH').textContent = 'افتح الصفحة من تيليجرام لإرسال النتيجة';
+    var data = resData || encode();
+    if (tg && tg.sendData) {
+      try { tg.sendData(data); } catch (e) { sent = false; showRetry(); return; }
+      setTimeout(showRetry, 2500);    // لو الصفحة بقيت مفتوحة بعد الإرسال معناها ما انغلقت: نعرض زر إعادة
+    } else { $('cH').textContent = 'افتح الصفحة من تيليجرام لإرسال النتيجة'; }
   }
+  function showRetry() {
+    if (demo || phase !== 'done') return;
+    $('cH').innerHTML = '⚠️ لم تصل نتيجتك بعد<br><button id="rtb" style="margin-top:10px;padding:10px 22px;border-radius:14px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.18);color:#fff;font:inherit;font-size:16px">🔁 إعادة الإرسال</button>';
+    var b = $('rtb'); if (b) b.addEventListener('click', function () { sent = false; $('cH').textContent = 'جاري إرسال نتيجتك...'; send(); });
+  }
+  // لو اللاعب صغّر/غادر الصفحة قبل الإرسال: نرسل فوراً بدل ما تتجمد المؤقتات وتضيع النتيجة
+  function flushNow() { if (phase === 'done' && !sent && !demo) send(); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) flushNow(); });
+  window.addEventListener('pagehide', flushNow);
 
   // ============================================================
   //  الضغط
@@ -343,6 +361,7 @@
     var before = { lo: st.lo.slice(), hi: st.hi.slice() };
     var res = place(st, i, t - S, seed);
     taps.push(t);
+    if (!demo) lsSet(tapsKey, taps.join(','));   // نحفظ تقدمه عشان يكمل لو سكّر الصفحة
     if (res.miss) {
       var x0 = before.lo[0], x1 = before.hi[0], z0 = before.lo[1], z1 = before.hi[1];
       if (ax === 0) { x0 += res.p; x1 += res.p; } else { z0 += res.p; z1 += res.p; }
@@ -409,6 +428,32 @@
         if (d) { var t1 = Date.now(); skew = new Date(d).getTime() - (t0 + t1) / 2; }
       }).catch(function () {});
     } catch (e) {}
+  }
+  if (!demo) {
+    var savedRes = lsGet(resKey);
+    if (savedRes) {
+      phase = 'done'; resData = savedRes;
+      showCover('📤 إعادة إرسال نتيجتك', '', 'جاري إرسال نتيجتك...');
+      setTimeout(send, 400);
+    } else {
+      var savedTaps = lsGet(tapsKey);
+      if (savedTaps) {
+        // رجّعه لمكانه: نعيد تشغيل ضغطاته بنفس منطق اللعبة، والوقت يكمل من الساعة المشتركة
+        var arr = savedTaps.split(',').map(Number).filter(function (n) { return n > 0; });
+        var broke = false;
+        for (var ri = 0; ri < arr.length; ri++) {
+          var rt = arr[ri], rres = place(st, floors + 1, rt - S, seed);
+          taps.push(rt);
+          if (rres.miss) { broke = true; break; }
+          floors++; blocks.push([st.lo[0], st.hi[0], st.lo[1], st.hi[1]]);
+          if (!rres.cut) perfects++;
+          S = rt + NEXT;
+        }
+        camH = floors * H; setScore();
+        if (broke) finish('fall');
+        else showCover('استعد! تكمل من الطابق', floors, 'رجعناك لمكانك، والوقت يمشي 🕒');
+      }
+    }
   }
   if (demo) window.__tw = { place: place, posAt: posAt, offs: offs, newState: newState };
 })();
