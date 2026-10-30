@@ -156,7 +156,22 @@ var IV=Math.max(2,parseFloat(q.get('i'))||6); /* 2ث دحرجة+نداء ثم 4�
 /* مزامنة الساعة: كل اللاعبين يحسبون الوقت بساعة السيرفر مو ساعة الجوال (فرق الساعات كان يسبب اختلاف العدّاد 10/20/40) */
 var SKEW=0;
 function nowS(){return (Date.now()+SKEW)/1000;}
-function syncClock(done){
+var SRVHOST='https://63zqoihn0s.apps.bot-hosting.cloud';
+/* الأفضل: نتزامن مع ساعة البوت نفسه (/time) لأن البوت هو اللي يتحقق من الفوز بساعته */
+function syncSrv(ok,fail){
+ var samples=[],n=0,fin=false;
+ function end(){if(fin)return;fin=true;
+  if(samples.length){samples.sort(function(a,b){return a.rtt-b.rtt;});SKEW=samples[0].skew;ok();}else fail();}
+ setTimeout(end,2000);
+ function one(){
+  var t0=Date.now();
+  fetch(SRVHOST+'/time?_='+t0+n,{cache:'no-store'}).then(function(r){return r.text();}).then(function(tx){
+   var t1=Date.now(),ms=parseFloat(tx);
+   if(!isNaN(ms)&&ms>1e12)samples.push({rtt:t1-t0,skew:ms-(t0+t1)/2});
+  }).catch(function(){}).then(function(){if(++n<4)one();else end();});}
+ try{one();}catch(e){end();}
+}
+function syncDate(done){
  var url=location.href.split('#')[0].split('?')[0],samples=[],n=0,fin=false;
  function end(){if(fin)return;fin=true;
   if(samples.length){samples.sort(function(a,b){return a.rtt-b.rtt;});SKEW=samples[0].skew;}
@@ -170,6 +185,7 @@ function syncClock(done){
   }).catch(function(){}).then(function(){if(++n<3)one();else end();});}
  try{one();}catch(e){end();}
 }
+function syncClock(done){syncSrv(done,function(){syncDate(done);});}
 var BEGIN=parseFloat(q.get('b'))||(Date.now()/1000+(demo?3:5));
 var RELAY=(q.get('r')||'').replace(/[^A-Za-z0-9_-]/g,'');
 /* ===== مولّد عشوائي حتمي (نفس الخوارزمية بالبوت) ===== */
@@ -185,6 +201,7 @@ function makeOrder(seed){var R=mul(fnv('call:'+seed)),a=[];for(var i=1;i<=75;i++
 var CARD=makeCard(cseed),ORDER=makeOrder(gseed);
 var SKEY='rb_'+cseed+'_'+gseed,marked={};
 try{var sv=JSON.parse(localStorage.getItem(SKEY)||'{}');if(sv&&typeof sv==='object')marked=sv;}catch(e){}
+var MSEQ=0;Object.keys(marked).forEach(function(k){var x=+marked[k];if(x>MSEQ)MSEQ=x;});
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(marked));}catch(e){}}
 /* ===== أدوات ===== */
 var st=document.getElementById('st');
@@ -224,7 +241,7 @@ function tap(v,b){
  if(ended){toast('انتهت الجولة');return;}
  if(marked[v]){delete marked[v];setOn(v,false);save();hap('light');return;}
  if(!isCalled(v)){b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');hap('rigid');toast('هذا الرقم ما اننادى بعد');return;}
- marked[v]=1;setOn(v,true);save();hap('medium');
+ marked[v]=++MSEQ;setOn(v,true);save();hap('medium');
 }
 /* ===== شريط آخر 5 أرقام ===== */
 var SLOTX=[221,391,561,731,901],SD=130,SY=254+GAP/2;
@@ -343,7 +360,7 @@ bt.addEventListener('click',function(){
  hap('medium');
  if(!hasWin()){toast('لوحتك لسا ما اكتملت!');hap('rigid');return;}
  ended=true;
- var m=Object.keys(marked).map(Number).sort(function(a,b){return a-b;});
+ var m=Object.keys(marked).map(Number).sort(function(a,b){return ((+marked[a])-(+marked[b]))||(a-b);});
  if(demo||!tg||!tg.sendData){finish('BINGO!','فزت! (وضع تجريبي)');return;}
  finish('BINGO!','جاري إرسال فوزك…');
  setTimeout(function(){try{tg.sendData(JSON.stringify({t:'bingo',s:cseed,g:gseed,n:called.length,m:m}));}catch(e){toast('تعذّر الإرسال');ended=false;fin.classList.remove('show');}},450);

@@ -100,7 +100,7 @@
   // ============================================================
   //  ثوابت اللعبة — لازم تتطابق حرفياً مع register_towers بالبوت
   // ============================================================
-  var BW = 300, H = 120, TOL = 10, SPAWN0 = 700, NEXT = 300, MINR = 60, GROW = 24, COMBO_N = 5, CYC = 1200;
+  var BW = 300, H = 120, TOL = 10, SPAWN0 = 700, NEXT = 300, MINR = 60, GROW = 24, COMBO_N = 3, CYC = 1200;
   function speed(i) { return Math.min(380 + 10 * i, 640); }
   function offs(seed, i) {
     var M = 4294967296;
@@ -415,7 +415,7 @@
   //  التشغيل
   // ============================================================
   $('bestv').textContent = bestPrev;
-  showCover('استعد! تبدأ بعد', '', 'ابنِ برجك طبقةً فوق طبقة 🏗<br>اضغط في اللحظة المناسبة لتثبيت الطابق<br>٥ طوابق متتالية بنفس المقاس بالضبط = يكبر الطابق!');
+  showCover('استعد! تبدأ بعد', '', 'ابنِ برجك طبقةً فوق طبقة 🏗<br>اضغط في اللحظة المناسبة لتثبيت الطابق<br>٣ طوابق متتالية بنفس المقاس بالضبط = يكبر الطابق!');
   window.addEventListener('resize', fit);
   window.addEventListener('orientationchange', function () { setTimeout(fit, 150); });
   fit(); requestAnimationFrame(frame);
