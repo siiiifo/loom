@@ -266,7 +266,7 @@ setInterval(()=>{if(!st||!st.deadline)return;const r=Math.max(0,st.deadline-(Dat
   function say(t){t=String(t||'').trim().slice(0,100);if(!t||Date.now()-last<1200)return;last=Date.now();
     $('emo2').classList.remove('show');P.classList.remove('eo');
     const me=st&&st.players.find(p=>p.uid===U),m={i:Math.random().toString(36).slice(2),n:me?me.name:NM,m:t};seen[m.i]=1;add(m,true);CI.value='';
-    if(CT)fetch('https://ntfy.sh/'+CT,{method:'POST',body:JSON.stringify(m)}).catch(()=>{});}
+    if(CT)fetch('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+CT,{method:'POST',body:JSON.stringify(m)}).catch(()=>{});}
   /* فتح الشات: الضغط على خانة الكتابة / الإيموجي / نقطة الرسائل الجديدة */
   CI.addEventListener('focus',()=>setOpen(true));CI.addEventListener('click',()=>setOpen(true));
   B.onclick=()=>setOpen(true);
@@ -276,7 +276,7 @@ setInterval(()=>{if(!st||!st.deadline)return;const r=Math.max(0,st.deadline-(Dat
   const inside=t=>t&&t.closest&&t.closest('#chatp,#cin,#csd,#est,#emo2,#cbadge');
   document.addEventListener('pointerdown',e=>{if(!open||inside(e.target))return;swallow=true;setTimeout(()=>swallow=false,500);setOpen(false);e.preventDefault();e.stopPropagation();},true);
   document.addEventListener('click',e=>{if(swallow){swallow=false;e.preventDefault();e.stopPropagation();}},true);
-  if(CT)try{new EventSource('https://ntfy.sh/'+CT+'/sse').onmessage=ev=>{try{const d=JSON.parse(ev.data);if(d.time&&d.time<Date.now()/1000-60)return;const o=JSON.parse(d.message);if(!o||!o.i||seen[o.i])return;seen[o.i]=1;add({n:String(o.n).slice(0,20),m:String(o.m).slice(0,100)},false);}catch(e){}};}catch(e){}
+  if(CT)try{new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+CT+'/sse').onmessage=ev=>{try{const d=JSON.parse(ev.data);if(d.time&&d.time<Date.now()/1000-60)return;const o=JSON.parse(d.message);if(!o||!o.i||seen[o.i])return;seen[o.i]=1;add({n:String(o.n).slice(0,20),m:String(o.m).slice(0,100)},false);}catch(e){}};}catch(e){}
 })();
 
 /* ===== مقاس ثابت للمسرح: الكيبورد ما يصغّره، بس يرفعه عشان خانة الكتابة تبان ===== */

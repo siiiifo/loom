@@ -637,9 +637,9 @@ setInterval(()=>{if(!st||!st.deadline)return;const r=Math.max(0,st.deadline-(Dat
     var m={i:id,n:String(p?p.name:'لاعب').slice(0,20),m:t,u:String(U),c:p?p.color:''};
     addMsg(m,true);if(fromInput){inp.value='';snd.classList.remove('on');}
     hap();
-    try{fetch('https://ntfy.sh/'+CT,{method:'POST',body:JSON.stringify(m)}).catch(function(){if(Date.now()-errT>8000){errT=Date.now();toast('تعذّر إرسال الرسالة');}});}catch(e){}
+    try{fetch('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+CT,{method:'POST',body:JSON.stringify(m)}).catch(function(){if(Date.now()-errT>8000){errT=Date.now();toast('تعذّر إرسال الرسالة');}});}catch(e){}
   }
-  try{var es=new EventSource('https://ntfy.sh/'+CT+'/sse');
+  try{var es=new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+CT+'/sse');
     es.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(!d||!d.message)return;
       if(d.time&&d.time<Date.now()/1000-60)return;
       var o=JSON.parse(d.message);if(!o||typeof o.m!=='string'||!o.i||seen[o.i])return;seen[o.i]=1;

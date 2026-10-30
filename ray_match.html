@@ -353,7 +353,7 @@
   }
 /* ===== مشترك MQTT خفيف (WebSocket): البديل الأساسي لـ ntfy لما يرفض الاستضافة (429) ===== */
 function rayMqtt(filters,onMsg,urls){
- urls=urls||['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+ urls=urls||[];
  var PFX='rayrelay/';
  filters=filters.map(function(f){return PFX+f;});
  urls.forEach(function(u){connect(u);});
@@ -399,7 +399,7 @@ function rayMqtt(filters,onMsg,urls){
     if (!relay || demo) return;
     rayMqtt([relay], function (t, p) { if (/end/i.test(p)) showEnd(); });
     try {
-      var es = new EventSource('https://ntfy.sh/' + relay + '/sse?since=all');
+      var es = new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/' + relay + '/sse?since=all');
       es.onmessage = function (e) { try { var d = JSON.parse(e.data); if (d.event === 'message' && d.message === 'end') showEnd(); } catch (x) {} };
     } catch (e) {}
   }

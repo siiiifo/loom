@@ -80,7 +80,7 @@ if(!over&&left<=0){lockEnd('انتهى الوقت');}
 if(!won){var s=Math.max(0,Math.ceil(left)),e=document.getElementById('tm');e.textContent=('0'+Math.floor(s/60)).slice(-2)+':'+('0'+s%60).slice(-2);e.className=s<=15?'w':'';}}
 /* ===== مشترك MQTT خفيف (WebSocket): البديل الأساسي لـ ntfy لما يرفض الاستضافة (429) ===== */
 function rayMqtt(filters,onMsg,urls){
- urls=urls||['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+ urls=urls||[];
  var PFX='rayrelay/';
  filters=filters.map(function(f){return PFX+f;});
  urls.forEach(function(u){connect(u);});
@@ -124,7 +124,7 @@ function rayMqtt(filters,onMsg,urls){
 }
 
 if(!demo&&relay)rayMqtt([relay],function(){lockEnd('انتهت اللعبة');});
-if(!demo&&relay&&window.EventSource){try{var es=new EventSource('https://ntfy.sh/'+relay+'/sse');es.onmessage=function(){lockEnd('انتهت اللعبة');es.close();};}catch(e){}}
+if(!demo&&relay&&window.EventSource){try{var es=new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+relay+'/sse');es.onmessage=function(){lockEnd('انتهت اللعبة');es.close();};}catch(e){}}
 syncClock();draw();tick();setInterval(tick,250);
 })();
 </script>

@@ -84,7 +84,7 @@ $('wd').onclick=()=>{if(st==='over')return;const m='متأكد تبي تنسحب
 function ended(){if(st==='over')return;over('انتهت اللعبة','فاز لاعب آخر');setTimeout(()=>{try{if(tg){tg.disableClosingConfirmation();tg.close()}}catch(e){}},3500)}
 /* ===== مشترك MQTT خفيف (WebSocket): البديل الأساسي لـ ntfy لما يرفض الاستضافة (429) ===== */
 function rayMqtt(filters,onMsg,urls){
- urls=urls||['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+ urls=urls||[];
  var PFX='rayrelay/';
  filters=filters.map(function(f){return PFX+f;});
  urls.forEach(function(u){connect(u);});
@@ -127,7 +127,7 @@ function rayMqtt(filters,onMsg,urls){
  }
 }
 if(TOPIC&&!demo)rayMqtt([TOPIC],function(t,p){if(/end/i.test(p))ended()});
-if(TOPIC&&window.EventSource){try{const es=new EventSource('https://ntfy.sh/'+encodeURIComponent(TOPIC)+'/sse?since=all');es.onmessage=ev=>{try{const m=JSON.parse(ev.data);if(m&&m.event==='message'){ended();es.close()}}catch(x){}}}catch(e){}}
+if(TOPIC&&window.EventSource){try{const es=new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+encodeURIComponent(TOPIC)+'/sse?since=all');es.onmessage=ev=>{try{const m=JSON.parse(ev.data);if(m&&m.event==='message'){ended();es.close()}}catch(x){}}}catch(e){}}
 function respawn(){ay=0;vy=0;ft=0;bk=null;st='idle';row=-1;lane=-1;pos.d=.8;pos.lx=0;shake=0;sh.length=0;tiles.forEach(r=>r.alive=[1,1])}
 function go(side){
  if(st!=='idle'||(!demo&&nowMs()<BEGIN))return;if(side<0){if(lane<0)return;side=lane}

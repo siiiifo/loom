@@ -350,7 +350,7 @@ bt.addEventListener('click',function(){
 });
 /* ===== مشترك MQTT خفيف (WebSocket): البديل الأساسي لـ ntfy لما يرفض الاستضافة (429) ===== */
 function rayMqtt(filters,onMsg,urls){
- urls=urls||['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+ urls=urls||[];
  var PFX='rayrelay/';
  filters=filters.map(function(f){return PFX+f;});
  urls.forEach(function(u){connect(u);});
@@ -399,10 +399,10 @@ function rayMqtt(filters,onMsg,urls){
  var es=null,pt=null;
  function stop(){if(ended)return;ended=true;try{es&&es.close();}catch(e){}clearInterval(pt);finish('انتهت الجولة','فاز لاعب آخر');}
  function isEnd(m){return !!m&&/end|win/i.test(m);}
- if(window.EventSource){try{es=new EventSource('https://ntfy.sh/'+RELAY+'/sse?since=all');
+ if(window.EventSource){try{es=new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+RELAY+'/sse?since=all');
   es.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(isEnd(d.message))stop();}catch(e){}};}catch(e){}}
  function poll(){if(ended)return;
-  try{fetch('https://ntfy.sh/'+RELAY+'/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+  try{fetch('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+RELAY+'/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
    String(t).split('\n').forEach(function(l){if(!l)return;try{var d=JSON.parse(l);if(d.event==='message'&&isEnd(d.message))stop();}catch(e){}});}).catch(function(){});}catch(e){}}
  pt=setInterval(poll,2000);poll();
  rayMqtt([RELAY],function(t,p){if(isEnd(p))stop();});
@@ -483,9 +483,9 @@ function rayMqtt(filters,onMsg,urls){
    var m={i:id,n:NAME,m:t,a:ADM?1:0,u:UID};
    addMsg(m,true);if(fromInput){inp.value='';snd.classList.remove('on');}
    hap('light');
-   try{fetch('https://ntfy.sh/'+CT,{method:'POST',body:JSON.stringify(m)}).catch(function(){if(Date.now()-errT>8000){errT=Date.now();toast('تعذّر إرسال الرسالة');}});}catch(e){}
+   try{fetch('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+CT,{method:'POST',body:JSON.stringify(m)}).catch(function(){if(Date.now()-errT>8000){errT=Date.now();toast('تعذّر إرسال الرسالة');}});}catch(e){}
   }
-  try{var es=new EventSource('https://ntfy.sh/'+CT+'/sse');
+  try{var es=new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+CT+'/sse');
    es.onmessage=function(ev){try{var d=JSON.parse(ev.data);if(!d||!d.message)return;
     if(d.time&&d.time<Date.now()/1000-60)return;
     var o=JSON.parse(d.message);if(!o||typeof o.m!=='string'||!o.i||seen[o.i])return;seen[o.i]=1;
@@ -495,11 +495,11 @@ function rayMqtt(filters,onMsg,urls){
    o.v.forEach(function(x){if(!x||x.length<2)return;var u=String(x[0]).replace(/[^0-9]/g,''),b=String(x[1]);if(!u||!/^[A-Za-z0-9+\/=]+$/.test(b)||b.length>6000)return;var v='data:image/jpeg;base64,'+b;if(AV[u]!==v){AV[u]=v;got=true;}});}catch(e){}
    if(got){saveAv();paintAv();}}
   function paintAv(){var els=document.querySelectorAll('.av[data-u]');for(var k=0;k<els.length;k++)setAv(els[k],els[k].getAttribute('data-u'));}
-  try{var ea=new EventSource('https://ntfy.sh/'+RELAY+'p/sse?since=all');ea.onmessage=function(ev){eatAv(ev.data);};}catch(e){}
+  try{var ea=new EventSource('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+RELAY+'p/sse?since=all');ea.onmessage=function(ev){eatAv(ev.data);};}catch(e){}
   /* احتياط: لو فاتتك رسالة صور (انقطاع/تأخر)، نسأل القناة كل 8 ثواني طالما فيه رسالة بدون صورة */
   function pollAv(){if(document.hidden)return;
    var miss=document.querySelectorAll('.av[data-u]:not(.hp)');if(!miss.length)return;
-   try{fetch('https://ntfy.sh/'+RELAY+'p/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+   try{fetch('https://63zqoihn0s.apps.bot-hosting.cloud/ntfy/'+RELAY+'p/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
     String(t).split('\n').forEach(function(l){if(l)eatAv(l);});}).catch(function(){});}catch(e){}}
   setInterval(pollAv,8000);
   rayMqtt([RELAY+'/p/#'],function(t,p){eatAv(JSON.stringify({message:p}));});
