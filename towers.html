@@ -144,6 +144,7 @@
   var D = Math.max(20, Math.min(600, parseInt(q.get('d'), 10) || 240));
   var beginAt = (parseInt(q.get('b'), 10) || 0) * 1000;
   var bestPrev = Math.max(0, parseInt(q.get('pb'), 10) || 0);
+  COMBO_N = Math.max(2, Math.min(5, parseInt(q.get('c'), 10) || COMBO_N));
   var skew = 0;
   if (demo) beginAt = Date.now() + 3000;
   function now() { return Date.now() + skew; }
