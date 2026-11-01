@@ -1,12 +1,14 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>المكعبات</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-html,body{margin:0;height:100%;background:#2a0a4a;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;font-family:system-ui,sans-serif}
+html,body{margin:0;height:100%;background:#2a0a4a;overflow:hidden;overscroll-behavior:none;touch-action:none;position:fixed;inset:0;width:100%;user-select:none;-webkit-user-select:none;font-family:system-ui,sans-serif}
 #g{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,calc(100vh*941/1671));aspect-ratio:941/1671;background:url(cubes_bg.jpg) center/100% 100%;container-type:inline-size}
 #g>*{position:absolute;box-sizing:border-box}
 canvas{display:block}
 .av{border-radius:50%;background:linear-gradient(#6b25b0,#2b0c52);border:.6cqw solid #ff8ad8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:7cqw}
+.av{overflow:hidden}.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none}
 .nm{border-radius:30px;background:linear-gradient(#8a3fe0,#5a1fa8);border:.3cqw solid #b97cff;color:#fff;font-weight:700;font-size:3.4cqw;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;padding:0 1cqw}
 .pn{background:#2a0f4a;border:.6cqw solid #ff7fd6;border-radius:1.6cqw}
 .pn canvas{width:100%;height:100%}
@@ -31,7 +33,27 @@ function P(id,x,y,w,h){const e=$(id).style;e.left=x/9.41+'%';e.top=y/16.71+'%';e
 P('av0',55,248,117,117);P('nm0',20,362,185,42);P('p0',30,428,150,274);P('q0',186,444,38,104);
 P('av1',772,248,117,117);P('nm1',738,363,188,50);P('q1',795,437,87,262);
 P('bd',238,258,474,1157);P('tr',238,1452,474,100);P('ov',260,560,430,300);
-$('av0').textContent=OPP[0];$('nm0').textContent=OPP;$('av1').textContent=ME[0];$('nm1').textContent=ME;
+$('nm0').textContent=OPP;$('nm1').textContent=ME;
+/* ===== قفل الشاشة: يمنع السحب لتحت من إغلاق التطبيق ===== */
+(function(){const W=window.Telegram&&Telegram.WebApp;
+ try{if(W){W.ready();W.expand();
+  if(W.disableVerticalSwipes)W.disableVerticalSwipes();
+  if(W.enableClosingConfirmation)W.enableClosingConfirmation();
+  try{W.setHeaderColor('#2a0a4a');W.setBackgroundColor('#2a0a4a')}catch(e){}
+  W.onEvent&&W.onEvent('viewportChanged',()=>{try{W.expand()}catch(e){}})}}catch(e){}
+ const stop=e=>{if(e.cancelable)e.preventDefault()};
+ document.addEventListener('touchmove',stop,{passive:false});
+ document.addEventListener('touchstart',e=>{if(e.touches&&e.touches.length>1)stop(e)},{passive:false});
+ document.addEventListener('gesturestart',stop);document.addEventListener('contextmenu',stop);
+ addEventListener('scroll',()=>scrollTo(0,0));
+})();
+function unlockClose(){try{Telegram.WebApp.disableClosingConfirmation()}catch(e){}}
+/* ===== صور اللاعبين ===== */
+const AVB=WSU?WSU.replace(/^wss:/,'https:').replace(/^ws:/,'http:').replace(/\/ws_cubes.*$/,'/cubes_av/'):'';
+function setAv(id,uid,ch){const e=$(id);e.textContent=ch;if(!AVB||!uid)return;
+ const im=new Image();im.referrerPolicy='no-referrer';im.onload=()=>{e.textContent='';e.appendChild(im)};im.src=AVB+encodeURIComponent(uid)+'.jpg?v='+(qs.get('r')||'')}
+setAv('av0',qs.get('ou'),OPP[0]);setAv('av1',qs.get('u'),ME[0]);
+
 function blk(c,x,y,s,v){if(!v)return;const g=v==GR,col=g?'#8a857f':COL[v],p=s*.05;
  if(s>=60){c.shadowColor=g?'transparent':col;c.shadowBlur=s*.35}c.fillStyle=col;c.beginPath();c.roundRect(x+p,y+p,s-2*p,s-2*p,s*.12);c.fill();c.shadowBlur=0;
  c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=Math.max(1,s*.04);c.stroke();
@@ -48,7 +70,7 @@ function snap(){send({t:'b',g:grid.flat().join(''),n:nxt.join('')})}
 function lose(){if(over)return;send({t:'l'});finish(false)}
 function finish(win){if(over)return;over=true;const o=$('ov');o.style.display='flex';
  o.innerHTML=(win?'🏆 فزت!':'💥 خسرت')+'<small>'+(win?'انتهى الخصم':'امتلأت اللوحة')+'</small>';
- setTimeout(()=>{try{Telegram.WebApp.sendData('cb.'+(qs.get('r')||'')+'.'+(win?'w':'l'))}catch(e){}},1800)}
+ setTimeout(()=>{unlockClose();try{Telegram.WebApp.sendData('cb.'+(qs.get('r')||'')+'.'+(win?'w':'l'))}catch(e){}},1800)}
 function find(){const m=new Set(),D=[[1,0],[0,1],[1,1],[1,-1]];
  for(let r=0;r<R;r++)for(let c=0;c<C;c++){const v=grid[r][c];if(!v||v==GR)continue;
   for(const[dr,dc]of D){const pr=r-dr,pc=c-dc;if(pr>=0&&pr<R&&pc>=0&&pc<C&&grid[pr][pc]==v)continue;
