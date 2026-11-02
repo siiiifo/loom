@@ -66,7 +66,7 @@ const mk=()=>Array.from({length:R},()=>Array(C).fill(0));
 const fits=(x,y)=>{if(x<0||x>=C)return false;for(let i=0;i<3;i++){const r=y+i;if(r>=R||(r>=0&&grid[r][x]))return false}return true};
 function send(o){if(ws&&ws.readyState==1)ws.send(JSON.stringify(o))}
 function spawn(){cur={x:2,y:-2,c:nxt||rp()};nxt=rp();if(!fits(2,-2))return lose();drawQ();snap()}
-function snap(){send({t:'b',g:grid.flat().join(''),n:nxt.join('')})}
+function snap(){send({t:'b',g:grid.flat().join(''),n:nxt.join(''),p:pend})}
 function lose(){if(over)return;send({t:'l'});finish(false)}
 function finish(win){if(over)return;over=true;const o=$('ov');o.style.display='flex';
  o.innerHTML=(win?'🏆 فزت!':'💥 خسرت')+'<small>'+(win?'انتهى الخصم':'امتلأت اللوحة')+'</small>';
@@ -115,7 +115,9 @@ function drawTray(){const c=$('tr').getContext('2d');c.clearRect(0,0,396,84);
  if(pend>C){c.fillStyle='#fff';c.font='bold 22px system-ui';c.textAlign='center';c.fillText('+'+(pend-C),198,82)}}
 function loop(t){if(over)return;const dt=t-(last||t);last=t;acc+=dt;const sp=Math.max(140,650-(t-t0)/1000*3);
  while(acc>=sp&&!over){acc-=sp;if(fits(cur.x,cur.y+1))cur.y++;else lock()}draw(dt);requestAnimationFrame(loop)}
-function start(){if(started)return;started=true;$('ov').style.display='none';grid=mk();nxt=rp();spawn();drawTray();drawMini();t0=performance.now();requestAnimationFrame(loop)}
+function start(rs){if(started)return;started=true;$('ov').style.display='none';grid=mk();nxt=rp();
+ if(rs&&rs.g&&rs.g.length==R*C){for(let i=0;i<R*C;i++)grid[i/C|0][i%C]=+rs.g[i];if(rs.n&&rs.n.length==3)nxt=rs.n.split('').map(Number);pend=rs.p|0}
+ spawn();drawTray();drawMini();t0=performance.now();requestAnimationFrame(loop)}
 let g0=null;const bd=$('bd');
 bd.onpointerdown=e=>{bd.setPointerCapture(e.pointerId);g0={x:e.clientX,y:e.clientY,lx:e.clientX,m:false,d:false,t:Date.now()}};
 bd.onpointermove=e=>{if(!g0||over)return;const w=bd.getBoundingClientRect(),cw=w.width/C,ch=w.height/R;
@@ -124,8 +126,8 @@ bd.onpointermove=e=>{if(!g0||over)return;const w=bd.getBoundingClientRect(),cw=w
 bd.onpointerup=()=>{if(g0&&!g0.m&&Date.now()-g0.t<300)rot();g0=null};
 addEventListener('keydown',e=>{const k=e.key;if(k=='ArrowLeft')mv(-1);else if(k=='ArrowRight')mv(1);else if(k=='ArrowUp')rot();else if(k=='ArrowDown'||k==' ')drop()});
 if(WSU){const o=$('ov');o.style.display='flex';o.textContent='بانتظار الخصم…';
- ws=new WebSocket(WSU+(WSU.includes('?')?'&':'?')+'r='+encodeURIComponent(qs.get('r')||''));
- ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.t=='s')start();else if(m.t=='g'){pend+=m.n;drawTray()}
+ ws=new WebSocket(WSU+(WSU.includes('?')?'&':'?')+'r='+encodeURIComponent(qs.get('r')||'')+'&u='+encodeURIComponent(qs.get('u')||''));
+ ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.t=='s')start(m.rs);else if(m.t=='g'){pend+=m.n;drawTray()}
   else if(m.t=='b'){og=m.g;on=m.n;drawMini();drawOQ()}else if(m.t=='l'||m.t=='d')finish(true)}}
 else start();
 </script></body></html>
