@@ -86,7 +86,10 @@ function resolve(){let chain=0,sent=0,mx=0;
  if(chain>=2||mx>=4){const lv=Math.min(3,Math.max(chain-1,mx>=5?2:0));tx.push({s:['COOL','FRESH','WOW','INSANE'][lv],l:1,y:760})}
  if(sent){const k=Math.min(sent,pend);pend-=k;sent-=k;if(sent)send({t:'g',n:sent})}
  if(!chain&&pend){garbage(Math.min(pend,12));pend=0}drawTray()}
-function garbage(n){for(let i=0;i<n;i++){const c=Math.random()*C|0;let r=0;while(r<R&&!grid[r][c])r++;r--;if(r<0)return lose();grid[r][c]=GR;fx.push({r,c,l:1,col:'#ff2a3a'})}shake=1;flash=1}
+const dropFx={},pc=[];
+function syncPc(){while(pc.length>pend)pc.pop();while(pc.length<pend)pc.push(1+Math.random()*5|0)}
+function garbage(n){syncPc();for(let i=0;i<n;i++){const c=Math.random()*C|0;let r=0;while(r<R&&!grid[r][c])r++;r--;if(r<0)return lose();
+  grid[r][c]=pc.shift()||(1+Math.random()*5|0);dropFx[r*C+c]={o:-(r*66+66+i*70),v:0}}shake=.5}
 function lock(){for(let i=0;i<3;i++){const r=cur.y+i;if(r<0)return lose();grid[r][cur.x]=cur.c[i];fx.push({r,c:cur.x,l:.55,col:'#fff'})}
  resolve();if(!over)spawn()}
 const mv=d=>{if(cur&&!over&&fits(cur.x+d,cur.y))cur.x+=d};
@@ -96,7 +99,8 @@ function draw(dt){dt=(dt||16)/1000;const c=$('bd').getContext('2d'),s=66;c.setTr
  if(shake>0){c.translate((Math.random()-.5)*14*shake,(Math.random()-.5)*14*shake);shake=Math.max(0,shake-dt*3)}
  c.strokeStyle='rgba(255,255,255,.07)';for(let i=0;i<=C;i++){c.beginPath();c.moveTo(i*s,0);c.lineTo(i*s,990);c.stroke()}
  for(let i=0;i<=R;i++){c.beginPath();c.moveTo(0,i*s);c.lineTo(396,i*s);c.stroke()}
- for(let r=0;r<R;r++)for(let k=0;k<C;k++)blk(c,k*s,r*s,s,grid[r][k]);
+ for(const key in dropFx){const f=dropFx[key];f.v+=2600*dt;f.o+=f.v*dt;if(f.o>=0){delete dropFx[key];fx.push({r:key/C|0,c:key%C,l:.4,col:'#fff'})}}
+ for(let r=0;r<R;r++)for(let k=0;k<C;k++){const f=dropFx[r*C+k];blk(c,k*s,r*s+(f?f.o:0),s,grid[r][k])}
  if(cur&&!over){
   for(let i=0;i<3;i++)if(cur.y+i>=0)blk(c,cur.x*s,(cur.y+i)*s,s,cur.c[i])}
  for(const f of fx){f.l-=dt*3;if(f.l>0){const g=(1-f.l)*s*.3;c.globalAlpha=Math.min(1,f.l);c.fillStyle=f.col;c.fillRect(f.c*s-g,f.r*s-g,s+2*g,s+2*g)}}fx=fx.filter(f=>f.l>0);
@@ -110,8 +114,8 @@ function drawQ(){let c=$('nq').getContext('2d');c.clearRect(0,0,70,210);nxt.forE
 function drawOQ(){const c=$('oq').getContext('2d');c.clearRect(0,0,30,90);on.split('').forEach((v,i)=>blk(c,0,i*30,30,+v))}
 function drawMini(){const c=$('mini').getContext('2d');c.clearRect(0,0,132,255);if(!og)return;
  for(let i=0;i<R*C;i++)blk(c,(i%C)*22,(i/C|0)*17,17,+og[i])}
-function drawTray(){const c=$('tr').getContext('2d');c.clearRect(0,0,396,84);
- for(let i=0;i<C;i++){c.fillStyle='rgba(20,5,40,.45)';c.beginPath();c.roundRect(i*66+3,9,60,60,8);c.fill();if(i<pend)blk(c,i*66+3,9,60,GR)}
+function drawTray(){syncPc();const c=$('tr').getContext('2d');c.clearRect(0,0,396,84);
+ for(let i=0;i<C;i++){c.fillStyle='rgba(20,5,40,.45)';c.beginPath();c.roundRect(i*66+3,9,60,60,8);c.fill();if(i<pend)blk(c,i*66+3,9,60,pc[i]||1)}
  if(pend>C){c.fillStyle='#fff';c.font='bold 22px system-ui';c.textAlign='center';c.fillText('+'+(pend-C),198,82)}}
 function loop(t){if(over)return;const dt=t-(last||t);last=t;acc+=dt;const sp=Math.max(140,650-(t-t0)/1000*3);
  while(acc>=sp&&!over){acc-=sp;if(fits(cur.x,cur.y+1))cur.y++;else lock()}draw(dt);requestAnimationFrame(loop)}
