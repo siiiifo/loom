@@ -132,7 +132,9 @@ function onTick(dt){if(!snap||!run)return;
  [P.x,P.y]=WV(pk[0]+pk[2]*pl_,pk[1]+pk[3]*pl_);
  const o=snap.m,mine=meSeat?[o[2],o[3]]:[o[0],o[1]],opp=meSeat?[o[0],o[1]]:[o[2],o[3]],[ox,oy]=WV(opp[0],opp[1]);
  A.x+=(ox-A.x)*.55;A.y+=(oy-A.y)*.55;
- stepM(B,false,80);const[sx,sy]=WV(mine[0],mine[1]);if(Math.hypot(B.x-sx,B.y-sy)>90){B.x=sx;B.y=sy}
+ const[sx,sy]=WV(mine[0],mine[1]),dd=Math.hypot(B.x-sx,B.y-sy);
+ if(touch.size){stepM(B,false,80*Math.min(2,dt*60||1));if(dd>420){B.x+=(sx-B.x)*.12;B.y+=(sy-B.y)*.12}}
+ else{B.x+=(sx-B.x)*.5;B.y+=(sy-B.y)*.5;B.vx=B.vy=0}
  const n=performance.now();if(n-lastSend>=25&&ws&&ws.readyState===1){const[wx,wy]=WV(B.tx,B.ty);
   if(Math.abs(wx-sentX)>.5||Math.abs(wy-sentY)>.5||n-lastSend>250){ws.send(JSON.stringify({a:'m',x:Math.round(wx),y:Math.round(wy)}));sentX=wx;sentY=wy;lastSend=n}}}
 fit();if(ON)online();else cardBox('RAY هوكي','افتح اللعبة من زر البوت في الخاص بعد بدء المباراة','<button class="b" onclick="closeApp()">إغلاق</button>');requestAnimationFrame(loop);
