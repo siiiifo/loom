@@ -498,10 +498,10 @@ function locPutBack(s,items){const extra=[];for(const[id,t]of items){const[x,y]=
 function locColors(s,team,before,got,foul,carried){        // نفس _resolve_colors بالسيرفر (للمعاينة المحلية فقط)
   const my=s.players.find(p=>p.team===team).col,opp=my==='k'?'w':'k';
   const back=[];let pts=0,scored=false,cov=null,rep=0,pen=null,pend=carried;
-  let own=before.filter(c=>c[1]===my).length;const qFree=before.some(c=>c[1]==='q');
+  let own=before.filter(c=>c[1]===my).length;const ownBefore=own,qFree=before.some(c=>c[1]==='q');
   let qIn=false,lastq=false,qe=false,oppN=0,bad=false;
   for(const[cid,t]of got){
-    if(t==='q'){qIn=true;if(own===1&&!pend){pend=[cid,t];cov='pend'}else{back.push([cid,t]);qe=true}}
+    if(t==='q'){qIn=true;if(ownBefore===1&&!pend){pend=[cid,t];cov='pend'}else{back.push([cid,t]);qe=true}}
     else if(t===opp){back.push([cid,t]);oppN++;bad=true}
     else{
       if(s.debt[team]>0){s.debt[team]--;rep++;back.push([cid,t]);continue}
