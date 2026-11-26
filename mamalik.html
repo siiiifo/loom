@@ -12,7 +12,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;position:fixed;width:100%;background:#74474f;font-family:"Tajawal",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:var(--ink);touch-action:manipulation;user-select:none}
 #map{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
-.top{position:fixed;top:calc(env(safe-area-inset-top,0px) + 96px);left:0;right:0;padding:0 10px;display:flex;gap:8px;pointer-events:none;z-index:4}
+.top{flex-wrap:wrap;position:fixed;top:calc(env(safe-area-inset-top,0px) + 96px);left:0;right:0;padding:0 10px;display:flex;gap:8px;pointer-events:none;z-index:4}
 .nav{position:fixed;top:0;left:0;right:0;z-index:5;padding:calc(env(safe-area-inset-top,0px) + 6px) 6px 6px;background:linear-gradient(#6a40b4,#2a1850);border-bottom:3px solid #ffd86b;display:flex;justify-content:space-around;box-shadow:0 3px 10px #0006}
 .nav button{background:none;border:0;color:#e6d8ff;font:700 12px Tajawal,sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px}
 .nav .ic{width:46px;height:46px;border-radius:50%;background:radial-gradient(#fff,#cdb9ee);border:2px solid #ffd86b;display:grid;place-items:center;font-size:22px;box-shadow:0 2px 6px #0007}
@@ -35,7 +35,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;position
 .act.wide{grid-column:1/-1}.act.lock{opacity:.6}.rt{width:100%;margin-bottom:8px;text-align:right}.boot{}#boot{display:none;position:fixed;inset:0;z-index:30;background:linear-gradient(#3a1f6e,#15102a);color:#fff;align-items:center;justify-content:center;padding:24px;text-align:center}
 #boot .bx{width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px;align-items:stretch}#boot h2{margin:0;font-size:24px}#boot p{margin:0;color:#e6d8ff;line-height:1.7}#boot .err{color:#ffb4a8;min-height:1.2em}
 #boot input{border:2px solid #ffd86b;border-radius:12px;padding:12px;font:700 16px Tajawal,sans-serif;background:#fff;color:#2b2418;text-align:center}
-#alerts{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 146px);z-index:6;display:flex;flex-direction:column;gap:6px;pointer-events:none}#alerts>div{pointer-events:auto}#ralert{background:linear-gradient(#5a35a0,#2a1850)!important}#alert,#ralert{display:none;background:linear-gradient(#7a1f1f,#4a0f0f);border:2px solid #ffd86b;border-radius:14px;color:#fff;padding:8px 10px;box-shadow:0 4px 14px #000a}#alert b{display:block;font-size:14px}#alert .ab{display:flex;gap:6px;margin-top:6px}#alert button{flex:1;border:0;border-radius:10px;padding:8px;font:800 13px Tajawal,sans-serif;background:#ffd86b;color:#43237f}
+#alerts{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 176px);z-index:6;display:flex;flex-direction:column;gap:6px;pointer-events:none}#alerts>div{pointer-events:auto}#ralert{background:linear-gradient(#5a35a0,#2a1850)!important}#alert,#ralert{display:none;background:linear-gradient(#7a1f1f,#4a0f0f);border:2px solid #ffd86b;border-radius:14px;color:#fff;padding:8px 10px;box-shadow:0 4px 14px #000a}#alert b{display:block;font-size:14px}#alert .ab{display:flex;gap:6px;margin-top:6px}#alert button{flex:1;border:0;border-radius:10px;padding:8px;font:800 13px Tajawal,sans-serif;background:#ffd86b;color:#43237f}
 details{background:var(--cream);border:1px solid var(--line);border-radius:12px;margin:8px 0;padding:0 10px}summary{padding:10px 0;font-weight:800;cursor:pointer}.gd{padding-bottom:8px;font-size:14px;line-height:1.8}.gd p{margin:6px 0}.gd table{margin-top:4px}
 .hint.warn{background:#fde6e0;color:#8a2a18;border-radius:10px;padding:10px;font-size:14px}
 .task{background:var(--sand);border-radius:14px;padding:10px;margin-bottom:8px}.task.cl{opacity:.6}.tk{display:flex;gap:10px;align-items:center}.te{font-size:26px}.tk b{display:block;font-size:14px}.tk small{color:var(--mut);font-size:12px}
@@ -83,11 +83,12 @@ h2{margin:0 0 2px;font-size:20px;font-weight:800}
 .hint{font-size:12px;color:var(--mut);margin:8px 0 12px;line-height:1.7}
 #toast{z-index:9;position:fixed;top:calc(env(safe-area-inset-top,0px) + 150px);left:50%;transform:translate(-50%,-20px);background:var(--ink);color:var(--cream);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;opacity:0;transition:.25s;max-width:88vw;text-align:center;pointer-events:none}
 #toast.show{opacity:1;transform:translate(-50%,0)}
+.rtc{font-size:12px!important;padding:5px 9px!important}.rtc.go{background:linear-gradient(#3aa85a,#1f6e38)!important}
 </style>
 </head>
 <body>
 <canvas id="map"></canvas>
-<div class="top"><div class="chip">💰 <span id="gold">0</span></div><div class="chip">⚔️ <span id="pow">0</span><small>قوتك</small></div></div>
+<div class="top"><div class="chip">💰 <span id="gold">0</span></div><div class="chip">⚔️ <span id="pow">0</span><small>قوتك</small></div><div class="chip rtc" id="rtW">🏛️ <span>—</span></div><div class="chip rtc" id="rtE">🏁 <span>—</span></div></div>
 <div class="fab" id="fab"><button id="home" aria-label="مملكتي">🏰</button><button id="zin" aria-label="تكبير">+</button><button id="zout" aria-label="تصغير">−</button></div>
 <div class="nav"><button data-t="map" class="on"><span class="ic">🗺️</span>الخريطة</button><button data-t="stats"><span class="ic">📊</span>الإحصائيات</button><button data-t="rep"><span class="ic">📜<b class="bdg" id="rbd"></b></span>التقارير</button><button data-t="top"><span class="ic">🏆</span>التوب</button><button data-t="me"><span class="ic">🏰</span>مملكتي</button></div>
 <div id="pg" class="page"></div>
@@ -304,13 +305,13 @@ function showCard(e){
  h+='<div class="st"><b>'+fmt(e.power)+'</b><span>القوة</span></div>';
  if(e.type==='throne'||e.type==='wonder'||e.type==='oasis')h+='<div class="st"><b>'+esc(holderName(e))+'</b><span>المالك</span></div>';
  if(API_URL&&e.type==='oasis')h+='<div class="st"><b>'+(e.garrisoned?'🛡️ محصّنة':'فارغة')+'</b><span>الحامية</span></div>';
- if(API_URL&&(e.type==='throne'||e.type==='wonder')&&RULES[e.type])h+='<div class="st"><b>'+fmt(RULES[e.type])+'</b><span>أقل قوة للهجوم</span></div>';
+ if(e.type==='wonder'&&RT.end!=null)h+='<div class="st"><b>'+durT(RT.end-nowS())+'</b><span>باقي على نهاية الجولة</span></div>';if(API_URL&&(e.type==='throne'||e.type==='wonder')&&RULES[e.type])h+='<div class="st"><b>'+fmt(RULES[e.type])+'</b><span>أقل قوة للهجوم</span></div>';
  h+=isMe?'<div class="st"><b>'+fmt(gold)+'</b><span>ذهبك</span></div>':'<div class="st"><b>'+mmss(t)+'</b><span>وقت الوصول</span></div>';
  if(e.gold&&!isMe)h+='<div class="st"><b>'+fmt(e.gold)+'</b><span>'+(e.type==='k'?'ذهب تقديري':e.type==='m'?'متراكم بالمنجم':'دخل كل 15 دقيقة')+'</span></div>';
  if(!isMe)h+='<div class="st"><b>'+Math.round(d)+'</b><span>المسافة</span></div>';
  h+='</div>';
  if(isMe)h+='<div class="row2"><button class="btn alt" id="bTr">تدريب جيش</button><button class="btn ghost" id="bCl">إغلاق</button></div>';
- else h+='<div class="row2"><button class="btn" id="bAt"'+(canHit&&!emptyOasis?'':' disabled')+'>⚔️ هجوم</button><button class="btn alt" id="bSp"'+(e.type==='k'?'':' disabled')+'>🕵️ تجسس</button></div>'+(e.prot?'<div class="hint">هذي المملكة بحماية، تقدر تهاجمها بعد انتهاء الحماية.</div>':'')+(IS_LEADER&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bRl" style="background:linear-gradient(#e8a43a,#b8741a)">🥁 هجوم الحشد (القائد)</button></div>':'')+(emptyOasis&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bOc" style="background:linear-gradient(#4d8a4d,#2e6a2e)">🏴 استيلاء فوري (الواحة فاضية)</button></div>':'')+(API_URL&&e.type==='wonder'&&!e.open?'<div class="hint">🔒 معجزة راي مغلقة حالياً ولا يمكن الهجوم عليها.</div>':'')+(canGarrison(e)?'<div class="row2" style="margin-top:8px"><button class="btn alt" id="bGr">🛡️ تعزيز الحامية</button></div>':'')+(API_URL&&e.type==='oasis'&&e.holder==='me'?'<div class="row2" style="margin-top:8px"><button class="btn ghost" id="bAb">🏳️ التخلي عن الواحة</button></div>':'');
+ else h+='<div class="row2"><button class="btn" id="bAt"'+(canHit&&!emptyOasis?'':' disabled')+'>⚔️ هجوم</button><button class="btn alt" id="bSp"'+(e.type==='k'?'':' disabled')+'>🕵️ تجسس</button></div>'+(e.prot?'<div class="hint">هذي المملكة بحماية، تقدر تهاجمها بعد انتهاء الحماية.</div>':'')+(IS_LEADER&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bRl" style="background:linear-gradient(#e8a43a,#b8741a)">🥁 هجوم الحشد (القائد)</button></div>':'')+(emptyOasis&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bOc" style="background:linear-gradient(#4d8a4d,#2e6a2e)">🏴 استيلاء فوري (الواحة فاضية)</button></div>':'')+(API_URL&&e.type==='wonder'&&!e.open?'<div class="hint">🔒 معجزة راي مغلقة حالياً ولا يمكن الهجوم عليها.'+rtLine()+'</div>':'')+(canGarrison(e)?'<div class="row2" style="margin-top:8px"><button class="btn alt" id="bGr">🛡️ تعزيز الحامية</button></div>':'')+(API_URL&&e.type==='oasis'&&e.holder==='me'?'<div class="row2" style="margin-top:8px"><button class="btn ghost" id="bAb">🏳️ التخلي عن الواحة</button></div>':'');
  openSheet(h);
  var b;if(b=$('bAt'))b.onclick=function(){showAttack(e)};
  if(b=$('bGr'))b.onclick=function(){showGarrison(e)};
@@ -356,6 +357,24 @@ function setTab(t){tab=t;closeSheet();$('pg').style.display=t==='map'?'none':'bl
  var bs=document.querySelectorAll('.nav button');for(var i=0;i<bs.length;i++)bs[i].classList.toggle('on',bs[i].dataset.t===t);
  if(t==='stats')renderStats();else if(t==='top')renderTop();else if(t==='me')renderMe();else if(t==='rep')renderRep();$('pg').scrollTop=0}
 function bindRows(){var rs=document.querySelectorAll('#pg [data-id]');for(var i=0;i<rs.length;i++)(function(r){r.onclick=function(){goMap(r.dataset.id)}})(rs[i])}
+
+// ===== عدّاد المعجزة ونهاية الجولة =====
+var RT={open:null,end:null,start:null};if(!API_URL){RT.open=Date.now()/1000+3*3600+25*60;RT.end=Date.now()/1000+2*86400+5*3600}
+function tsv(v){if(v==null||v==='')return null;if(typeof v==='string'&&isNaN(+v)){var d=Date.parse(v);return isNaN(d)?null:d/1000}v=+v;if(!isFinite(v))return null;return v>1e12?v/1000:(v>1e9?v:null)}
+function firstT(a){for(var i=0;i<a.length;i++){var t=tsv(a[i]);if(t!=null)return t}return null}
+function firstR(a,base){for(var i=0;i<a.length;i++){var v=a[i];if(v!=null&&v!==''&&isFinite(+v)&&+v<1e9)return base+ +v}return null}
+function readRT(o){if(!o||typeof o!=='object')return;var base=+o.now||nowS(),wd=o.wonder||{},rd=o.round||o.season||{},R=o.rules||RULES||{};
+ var st=firstT([rd.start,rd.started_at,rd.start_at,o.round_start,o.round_started_at,o.season_start]);if(st!=null)RT.start=st;
+ var op=firstT([wd.opens_at,wd.open_at,rd.wonder_opens_at,o.wonder_opens_at,o.wonder_open_at]);if(op==null)op=firstR([wd.opens_in,wd.open_in,wd.opens_left,rd.wonder_opens_in,o.wonder_opens_in],base);
+ if(op==null&&RT.start!=null&&R.wonder_closed_h!=null)op=RT.start+R.wonder_closed_h*3600;if(op!=null)RT.open=op;
+ var en=firstT([rd.end,rd.ends_at,rd.end_at,o.round_end,o.round_ends_at,o.season_end,wd.hold_until,wd.round_end]);if(en==null)en=firstR([rd.ends_in,rd.left,o.round_ends_in,o.round_left,o.season_ends_in,wd.hold_left],base);
+ if(en==null){var hs=firstT([wd.held_since,wd.hold_start]);if(hs!=null&&R.wonder_hold_h!=null)en=hs+R.wonder_hold_h*3600}
+ if(en!=null)RT.end=en}
+function durT(s){s=Math.max(0,Math.round(s));var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),c=s%60;return d?d+'ي '+h+'س '+m+'د':h?h+'س '+m+'د '+c+'ث':m?m+'د '+c+'ث':c+'ث'}
+function updRT(){var w=ents.filter(function(x){return x.id==='wonder'})[0],a=$('rtW'),b=$('rtE');if(!a||!b)return;var n=nowS(),isOpen=w&&(w.open||(RT.open!=null&&RT.open<=n));
+ a.className='chip rtc'+(isOpen?' go':'');a.firstElementChild.textContent=isOpen?'مفتوحة للهجوم':(RT.open!=null?'تفتح بعد '+durT(RT.open-n):'وقت الفتح —');
+ b.firstElementChild.textContent=RT.end!=null?(RT.end>n?'الجولة تنتهي بعد '+durT(RT.end-n):'الجولة انتهت'):'نهاية الجولة —'}
+function rtLine(){var n=nowS(),o=RT.open!=null&&RT.open>n?'<br>⏳ تفتح بعد <b>'+durT(RT.open-n)+'</b>':'',e=RT.end!=null&&RT.end>n?'<br>🏁 الجولة تنتهي بعد <b>'+durT(RT.end-n)+'</b>':'';return o+e}
 // ===== أبطال معجزة راي (سجل الفائزين بالمواسم) =====
 var WIN=[{name:'سيف',alliance:'الصقور'},{name:'نورة',alliance:'الملوك'},{name:'سيف',alliance:'الصقور'},{name:'فهد',alliance:null},{name:'سيف',alliance:'الصقور'}],WINL=false; // تجريبي — الحقيقي من /wonder/champions
 function ordAr(n){var o={1:'الأول',2:'الثاني',3:'الثالث',4:'الرابع',5:'الخامس',6:'السادس',7:'السابع',8:'الثامن',9:'التاسع',10:'العاشر',11:'الحادي عشر',12:'الثاني عشر',13:'الثالث عشر',14:'الرابع عشر',15:'الخامس عشر',16:'السادس عشر',17:'السابع عشر',18:'الثامن عشر',19:'التاسع عشر'},t={20:'العشرون',30:'الثلاثون',40:'الأربعون',50:'الخمسون',60:'الستون',70:'السبعون',80:'الثمانون',90:'التسعون'},u={1:'الحادي',2:'الثاني',3:'الثالث',4:'الرابع',5:'الخامس',6:'السادس',7:'السابع',8:'الثامن',9:'التاسع'};
@@ -507,13 +526,13 @@ function HDR(){return{'X-Init-Data':tg&&tg.initData?tg.initData:'','X-Mr-Token':
 function jget(path){return fetch(API_URL+path,{headers:HDR()}).then(function(r){return r.json().then(function(j){j._st=r.status;return j})})}
 function mergeSt(o){if(!o)return;Object.keys(o).forEach(function(k){if(k==='bunker')ST.bunker={tr:o.bunker.troops||{},until:o.bunker.until||0,cd:o.bunker.cd||0};else if(k==='mines'){if(o.mines.lv)ST.mines=o.mines.lv;ST.up=o.mines.up||null}else ST[k]=o[k]})}
 function hid(u){return u?(String(u)===MYUID?'me':String(u)):null}
-function applyState(s){CLK=s.now-Date.now()/1000;MYUID=String(s.uid);gold=s.gold;Object.keys(avail).forEach(function(k){avail[k]=(s.troops&&s.troops[k])||0});
+function applyState(s){try{readRT(s)}catch(e){}CLK=s.now-Date.now()/1000;MYUID=String(s.uid);gold=s.gold;Object.keys(avail).forEach(function(k){avail[k]=(s.troops&&s.troops[k])||0});
  ST.protUntil=s.protection_until||0;ST.lastProt=s.last_protection_used||0;ST.lastRaid=s.last_raid||0;ST.streak=s.raid_streak||0;ST.lastGift=s.last_gift||0;
  ST.wounded=s.wounded||{};mergeSt({bunker:s.bunker,mines:s.mines});
  DAILY=s.tasks.list.map(function(t){return{id:t.id,e:t.emoji,d:t.desc,t:t.target,r:t.reward}});DT={date:new Date().toISOString().slice(0,10),p:s.tasks.progress||{},c:s.tasks.claimed||[]};
  IS_LEADER=!!s.leader;RULES=s.rules||{};MYALLY=s.alliance||'';applyExtra(s);if(me){me.power=s.power;me.atk=s.atk;me.def=s.def;me.prot=ST.protUntil>nowS();me.leader=!!s.leader;me.gold=gold}
  upd();updMe();updBadge()}
-function buildWorld(w,st,s){WORLD=w.size||3000;MYUID=String(s.uid);var pal=['#d0312d','#2b62c9','#2e9a47','#e0b21b','#7b3fc0'],names=[],by={};
+function buildWorld(w,st,s){try{readRT(w);readRT(s)}catch(e){}WORLD=w.size||3000;MYUID=String(s.uid);var pal=['#d0312d','#2b62c9','#2e9a47','#e0b21b','#7b3fc0'],names=[],by={};
  st.players.forEach(function(r){by[r.id]=r;if(r.alliance&&names.indexOf(r.alliance)<0)names.push(r.alliance)});
  ALL=names.map(function(n,i){return{n:n,c:pal[i%5]}});ents.length=0;
  w.kingdoms.forEach(function(k){var r=by[k.id]||{},isMe=String(k.id)===MYUID;ents.push({type:'k',id:isMe?'me':String(k.id),uid:String(k.id),name:k.name,x:k.x,y:k.y,power:k.power,ally:k.alliance?names.indexOf(k.alliance)+1:0,prot:!!k.prot,me:isMe,atk:r.atk||0,def:r.def||0,loot:r.loot||0,gold:0})});
@@ -524,7 +543,7 @@ function buildWorld(w,st,s){WORLD=w.size||3000;MYUID=String(s.uid);var pal=['#d0
  me=ents.filter(function(e){return e.me})[0]}
 function syncState(){jget('/state').then(function(s){if(s.ok)applyState(s)}).catch(function(){})}
 function syncSoon(){if(Date.now()-syncT<2500)return;syncT=Date.now();syncState()}
-function syncWorld(){jget('/world').then(function(w){if(!w.ok)return;var K={};w.kingdoms.forEach(function(k){K[String(k.id)]=k});
+function syncWorld(){jget('/world').then(function(w){if(!w.ok)return;try{readRT(w)}catch(e){}var K={};w.kingdoms.forEach(function(k){K[String(k.id)]=k});
  ents.forEach(function(e){if(e.type==='k'&&K[e.uid]&&!e.me){e.power=K[e.uid].power;e.prot=!!K[e.uid].prot}else if(e.type==='oasis'){(w.lands||[]).forEach(function(l){if(l.id===e.id){e.holder=hid(l.holder);e.garrisoned=!!l.garrisoned}})}else if(e.type==='throne')e.holder=hid(w.throne.holder);else if(e.type==='wonder'){e.holder=hid(w.wonder.holder);e.open=!!w.wonder.open}else if(e.type==='m'){(w.mines||[]).forEach(function(m){if('m'+m.id===e.id)e.gold=m.gold})}})}).catch(function(){})}
 function syncReports(){jget('/reports').then(function(j){if(!j.ok)return;var n=REP.length;REP=j.reports||[];REPL=true;updBadge();if(tab==='rep'&&REP.length!==n)renderRep()}).catch(function(){})}
 function bootApi(done){var ov=$('boot');
@@ -731,7 +750,7 @@ function doAct(name,confirm){
    var lost=heldLands().map(function(e){e.holder=null;return e.name});ST.protUntil=n+PROT_H*3600;ST.lastProt=n;
    toast('🛡️ تم تفعيل الحماية '+PROT_H+' ساعات'+(lost.length?' — وخسرت سيطرتك على: '+lost.join('، '):''))}}
  me.prot=protOn();upd();updMe()}
-setInterval(function(){tickMines();bunkerTick();if(API_URL&&INC.length)renderAlert();if(API_URL&&RLY.length)renderRallyBar();updMe();if(!API_URL){gold+=rate()/60;upd()}},1000);
+setInterval(function(){updRT();tickMines();bunkerTick();if(API_URL&&INC.length)renderAlert();if(API_URL&&RLY.length)renderRallyBar();updMe();if(!API_URL){gold+=rate()/60;upd()}},1000);
 var nb=document.querySelectorAll('.nav button');for(var ni=0;ni<nb.length;ni++)(function(b){b.onclick=function(){setTab(b.dataset.t)}})(nb[ni]);
 loadAssets(function(){IMGS.gray1=recolor(IMGS.castle_blue2,gray);IMGS.gray2=recolor(IMGS.castle_green2,gray);IMGS.gray3=recolor(IMGS.castle_red2,gray);IMGS.wonder=recolor(IMGS.throne,hueShift);
  function go(s){assign();if(!API_URL){ents.forEach(function(e){if(e.type==='k'){e.loot=Math.round(rnd()*9e7);e.atk=Math.round(e.power*(.7+rnd()*.7));e.def=Math.round(e.power*(.8+rnd()*1.3));if(e.me){e.gold=gold;e.atk=myPow();e.def=myDef();e.ally=5;e.leader=true}}});
