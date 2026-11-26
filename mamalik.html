@@ -482,7 +482,7 @@ function bootApi(done){var ov=$('boot');
    if(s.registered===false){reg();return}
    if(!s.ok){fail(s.error||'خطأ بالسيرفر');return}
    return Promise.all([jget('/world'),jget('/stats')]).then(function(r){if(!r[0].ok||!r[1].ok){fail('تعذر تحميل العالم');return}buildWorld(r[0],r[1],s);ov.style.display='none';done(s)})
-  }).catch(function(){fail('تأكد من اتصالك وأن السيرفر شغّال')})}
+  }).catch(function(e){fail('تأكد من اتصالك وأن السيرفر شغّال\n[DEBUG: '+((e&&(e.name+': '+e.message))||e)+' | api='+API_URL+' | tok='+(TOK?'yes':'no')+']')})}
  function reg(){var u=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user,nm=u&&u.first_name?u.first_name:'';
   msg('<h2>👑 مرحباً بك في ممالك راي</h2><p>سجّل مملكتك وابدأ بـ 50 مشاة وذهب البداية</p><input id="rgName" maxlength="24" placeholder="اسم مملكتك" value="'+esc(nm)+'"><button class="btn" id="rgGo">🏰 تسجيل مملكتي</button><p id="rgErr" class="err"></p>');
   $('rgGo').onclick=function(){var n=$('rgName').value.trim();$('rgGo').disabled=true;
