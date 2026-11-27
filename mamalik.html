@@ -305,13 +305,13 @@ function showCard(e){
  h+='<div class="st"><b>'+fmt(e.power)+'</b><span>القوة</span></div>';
  if(e.type==='throne'||e.type==='wonder'||e.type==='oasis')h+='<div class="st"><b>'+esc(holderName(e))+'</b><span>المالك</span></div>';
  if(API_URL&&e.type==='oasis')h+='<div class="st"><b>'+(e.garrisoned?'🛡️ محصّنة':'فارغة')+'</b><span>الحامية</span></div>';
- if(e.type==='wonder'&&RT.end!=null)h+='<div class="st"><b>'+durT(RT.end-nowS())+'</b><span>باقي على نهاية الجولة</span></div>';if(API_URL&&(e.type==='throne'||e.type==='wonder')&&RULES[e.type])h+='<div class="st"><b>'+fmt(RULES[e.type])+'</b><span>أقل قوة للهجوم</span></div>';
+ if(e.type==='wonder'){var _n=nowS(),_op=e.open||(RT.open!=null&&RT.open<=_n);if(!_op){if(RT.open!=null)h+='<div class="st"><b id="wtT">'+durT(RT.open-_n)+'</b><span>⏳ تفتح بعد</span></div>'}else if(RT.end!=null)h+='<div class="st"><b id="wtT">'+durT(RT.end-_n)+'</b><span>🏁 باقي على نهاية الجولة</span></div>'}if(API_URL&&(e.type==='throne'||e.type==='wonder')&&RULES[e.type])h+='<div class="st"><b>'+fmt(RULES[e.type])+'</b><span>أقل قوة للهجوم</span></div>';
  h+=isMe?'<div class="st"><b>'+fmt(gold)+'</b><span>ذهبك</span></div>':'<div class="st"><b>'+mmss(t)+'</b><span>وقت الوصول</span></div>';
  if(e.gold&&!isMe)h+='<div class="st"><b>'+fmt(e.gold)+'</b><span>'+(e.type==='k'?'ذهب تقديري':e.type==='m'?'متراكم بالمنجم':'دخل كل 15 دقيقة')+'</span></div>';
  if(!isMe)h+='<div class="st"><b>'+Math.round(d)+'</b><span>المسافة</span></div>';
  h+='</div>';
  if(isMe)h+='<div class="row2"><button class="btn alt" id="bTr">تدريب جيش</button><button class="btn ghost" id="bCl">إغلاق</button></div>';
- else h+='<div class="row2"><button class="btn" id="bAt"'+(canHit&&!emptyOasis?'':' disabled')+'>⚔️ هجوم</button><button class="btn alt" id="bSp"'+(e.type==='k'?'':' disabled')+'>🕵️ تجسس</button></div>'+(e.prot?'<div class="hint">هذي المملكة بحماية، تقدر تهاجمها بعد انتهاء الحماية.</div>':'')+(IS_LEADER&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bRl" style="background:linear-gradient(#e8a43a,#b8741a)">🥁 هجوم الحشد (القائد)</button></div>':'')+(emptyOasis&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bOc" style="background:linear-gradient(#4d8a4d,#2e6a2e)">🏴 استيلاء فوري (الواحة فاضية)</button></div>':'')+(API_URL&&e.type==='wonder'&&!e.open?'<div class="hint">🔒 معجزة راي مغلقة حالياً ولا يمكن الهجوم عليها.'+rtLine()+'</div>':'')+(canGarrison(e)?'<div class="row2" style="margin-top:8px"><button class="btn alt" id="bGr">🛡️ تعزيز الحامية</button></div>':'')+(API_URL&&e.type==='oasis'&&e.holder==='me'?'<div class="row2" style="margin-top:8px"><button class="btn ghost" id="bAb">🏳️ التخلي عن الواحة</button></div>':'');
+ else h+='<div class="row2"><button class="btn" id="bAt"'+(canHit&&!emptyOasis?'':' disabled')+'>⚔️ هجوم</button><button class="btn alt" id="bSp"'+(e.type==='k'||(API_URL&&(e.type==='oasis'||e.type==='throne'||e.type==='wonder'))?'':' disabled')+'>🕵️ تجسس</button></div>'+(e.prot?'<div class="hint">هذي المملكة بحماية، تقدر تهاجمها بعد انتهاء الحماية.</div>':'')+(IS_LEADER&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bRl" style="background:linear-gradient(#e8a43a,#b8741a)">🥁 هجوم الحشد (القائد)</button></div>':'')+(emptyOasis&&canHit?'<div class="row2" style="margin-top:8px"><button class="btn" id="bOc" style="background:linear-gradient(#4d8a4d,#2e6a2e)">🏴 استيلاء فوري (الواحة فاضية)</button></div>':'')+(API_URL&&e.type==='wonder'&&!e.open?'<div class="hint">🔒 معجزة راي مغلقة حالياً ولا يمكن الهجوم عليها.'+rtLine()+'</div>':'')+(canGarrison(e)?'<div class="row2" style="margin-top:8px"><button class="btn alt" id="bGr">🛡️ تعزيز الحامية</button></div>':'')+(API_URL&&e.type==='oasis'&&e.holder==='me'?'<div class="row2" style="margin-top:8px"><button class="btn ghost" id="bAb">🏳️ التخلي عن الواحة</button></div>':'');
  openSheet(h);
  var b;if(b=$('bAt'))b.onclick=function(){showAttack(e)};
  if(b=$('bGr'))b.onclick=function(){showGarrison(e)};
@@ -369,11 +369,11 @@ function readRT(o){if(!o||typeof o!=='object')return;var base=+o.now||nowS(),wd=
  if(op==null&&RT.start!=null&&R.wonder_closed_h!=null)op=RT.start+R.wonder_closed_h*3600;if(op!=null)RT.open=op;
  var en=firstT([rd.end,rd.ends_at,rd.end_at,o.round_end,o.round_ends_at,o.season_end,wd.hold_until,wd.round_end]);if(en==null)en=firstR([rd.ends_in,rd.left,o.round_ends_in,o.round_left,o.season_ends_in,wd.hold_left],base);
  if(en==null){var hs=firstT([wd.held_since,wd.hold_start]);if(hs!=null&&R.wonder_hold_h!=null)en=hs+R.wonder_hold_h*3600}
- if(en!=null)RT.end=en}
+ if(en!=null)RT.end=en;if(wd&&wd.opens_at!==undefined)RT.open=tsv(wd.opens_at);if(wd&&wd.ends_at!==undefined)RT.end=tsv(wd.ends_at)}
 function durT(s){s=Math.max(0,Math.round(s));var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),c=s%60;return d?d+'ي '+h+'س '+m+'د':h?h+'س '+m+'د '+c+'ث':m?m+'د '+c+'ث':c+'ث'}
 function updRT(){var w=ents.filter(function(x){return x.id==='wonder'})[0],a=$('rtW'),b=$('rtE');if(!a||!b)return;var n=nowS(),isOpen=w&&(w.open||(RT.open!=null&&RT.open<=n));
  a.className='chip rtc'+(isOpen?' go':'');a.firstElementChild.textContent=isOpen?'مفتوحة للهجوم':(RT.open!=null?'تفتح بعد '+durT(RT.open-n):'وقت الفتح —');
- b.firstElementChild.textContent=RT.end!=null?(RT.end>n?'الجولة تنتهي بعد '+durT(RT.end-n):'الجولة انتهت'):'نهاية الجولة —'}
+ b.firstElementChild.textContent=RT.end!=null?(RT.end>n?'الجولة تنتهي بعد '+durT(RT.end-n):'الجولة انتهت'):'نهاية الجولة —';var q=$('wtT');if(q){var _o=w&&(w.open||(RT.open!=null&&RT.open<=n));q.textContent=_o?(RT.end!=null?durT(RT.end-n):'—'):(RT.open!=null?durT(RT.open-n):'—')}}
 function rtLine(){var n=nowS(),o=RT.open!=null&&RT.open>n?'<br>⏳ تفتح بعد <b>'+durT(RT.open-n)+'</b>':'',e=RT.end!=null&&RT.end>n?'<br>🏁 الجولة تنتهي بعد <b>'+durT(RT.end-n)+'</b>':'';return o+e}
 // ===== أبطال معجزة راي (سجل الفائزين بالمواسم) =====
 var WIN=[{name:'سيف',alliance:'الصقور'},{name:'نورة',alliance:'الملوك'},{name:'سيف',alliance:'الصقور'},{name:'فهد',alliance:null},{name:'سيف',alliance:'الصقور'}],WINL=false; // تجريبي — الحقيقي من /wonder/champions
@@ -574,14 +574,14 @@ function sendAtk(e,troops,mode,confirm,occupy){
   else if(j.needs_confirm)confirmSheet('🛡️ حماية مملكتك فعّالة','الهجوم يلغي حمايتك فوراً. تبي تكمل؟','⚔️ نعم، اهجم',function(){sendAtk(e,troops,mode,true,occupy)});
   else toast(j.error||'تعذر الهجوم')}).catch(function(){toast('تعذر الاتصال بالسيرفر')})}
 function doSpy(e,confirm){
- jpost('/spy',{target:e.uid,confirm:!!confirm}).then(function(j){
+ jpost('/spy',e.type==='k'?{target:e.uid,confirm:!!confirm}:{kind:e.type,target:e.id,confirm:!!confirm}).then(function(j){
   if(j.gold!=null){gold=j.gold;upd()}
   if(j.ok&&j.found){showSpy(e,j.report);syncReports();syncSoon()}
   else if(j.ok){toast(j.msg||'❌ اكتُشف جاسوسك وقُتل!')}
   else if(j.needs_confirm)confirmSheet('🛡️ حماية مملكتك فعّالة','التجسس يلغي حمايتك. تبي تكمل؟','🕵️ نعم، تجسّس',function(){doSpy(e,true)});
   else toast(j.error||'تعذر التجسس')}).catch(function(){toast('تعذر الاتصال بالسيرفر')})}
-function showSpy(e,r){var rows='';[['الجيش',r.troops],['تعزيزات الحلفاء',r.garrison]].forEach(function(x){var t=Object.keys(x[1]||{}).filter(function(k){return x[1][k]>0});rows+='<tr><td class="pn">'+x[0]+'</td><td>'+(t.length?t.map(function(k){return(TT[k]?TT[k].e+' ':'')+k+' '+fmt(x[1][k])}).join('<br>'):'—')+'</td></tr>'});
- openSheet('<h2>🕵️ تقرير تجسس</h2><div class="sub">'+esc(r.name||e.name)+'</div><div class="grid"><div class="st"><b>'+fmt(r.power)+'</b><span>القوة</span></div><div class="st"><b>'+fmt((r.resources||{}).gold||0)+'</b><span>الذهب</span></div></div><table class="tb">'+rows+'</table><div class="row2" style="margin-top:10px"><button class="btn ghost" id="spX">إغلاق</button><button class="btn" id="spAt">⚔️ هجوم</button></div>');
+function showSpy(e,r){var rows='';(r.kind?[['الجيش المرابط',r.troops]]:[['الجيش',r.troops],['تعزيزات الحلفاء',r.garrison]]).forEach(function(x){var t=Object.keys(x[1]||{}).filter(function(k){return x[1][k]>0});rows+='<tr><td class="pn">'+x[0]+'</td><td>'+(t.length?t.map(function(k){return(TT[k]?TT[k].e+' ':'')+k+' '+fmt(x[1][k])}).join('<br>'):'—')+'</td></tr>'});
+ openSheet('<h2>🕵️ تقرير تجسس</h2><div class="sub">'+esc(r.name||e.name)+'</div><div class="grid">'+(r.kind?'<div class="st"><b>'+esc(r.owner_name||'شاغرة')+'</b><span>المالك</span></div>':'<div class="st"><b>'+fmt(r.power)+'</b><span>القوة</span></div><div class="st"><b>'+fmt((r.resources||{}).gold||0)+'</b><span>الذهب</span></div>')+'</div><table class="tb">'+rows+'</table><div class="row2" style="margin-top:10px"><button class="btn ghost" id="spX">إغلاق</button><button class="btn" id="spAt">⚔️ هجوم</button></div>');
  $('spX').onclick=closeSheet;$('spAt').onclick=function(){showAttack(e)}}
 function syncMarches(){jget('/marches').then(function(j){if(!j.ok)return;var by={},ids={},list=[],mine={};ents.forEach(function(e){ids[e.id]=e;if(e.type==='k')by[e.uid]=e});
  j.marches.forEach(function(m){var tt=m.to||{kind:'k',id:m.def&&m.def.id,name:m.def&&m.def.name},f=by[m.atk.id],t=tt.kind==='k'?by[tt.id]:ids[tt.id];if(!f||!t)return;list.push({id:m.id,f:f,to:t,t0:performance.now()-(j.now-m.start)*1000,dur:m.arrive-m.start,inc:m.role==='def',tr:m.troops||null});
